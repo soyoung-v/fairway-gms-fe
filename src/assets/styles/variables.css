@@ -1,0 +1,84 @@
+:root {
+  /* ─── Manager / Admin Web Primary ─── */
+  --manager-primary:          #2D6A4F;   /* 진한 녹색 — 버튼, 사이드바 활성 링크, 액센트 */
+  --manager-primary-hover:    #235C43;   /* 버튼 hover */
+  --manager-primary-light:    #D8F3DC;   /* 뱃지 배경, 연한 강조 */
+  --manager-primary-contrast: #FFFFFF;   /* primary 버튼 위 텍스트 */
+
+  /* ─── Caddy Mobile PWA Primary ─── */
+  --caddy-primary:            #52B788;   /* 연한 녹색 — 하단 네비, 강조 */
+  --caddy-primary-hover:      #40916C;   /* 탭 활성 hover */
+  --caddy-primary-light:      #D8F3DC;   /* 뱃지 배경 */
+  --caddy-primary-contrast:   #FFFFFF;
+
+  /* ─── 공통 시맨틱 색상 ─── */
+  --color-success:            #40916C;   /* 승인 완료, 성공 상태 */
+  --color-success-bg:         rgba(64, 145, 108, 0.12);
+  --color-danger:             #E53E3E;   /* 삭제, 거절, 에러 */
+  --color-danger-bg:          rgba(229, 62, 62, 0.10);
+  --color-warning:            #C08B2D;   /* 경고, 대기 상태 */
+  --color-warning-bg:         rgba(192, 139, 45, 0.14);
+  --color-info:               #2B6CB0;   /* 안내 정보 */
+  --color-info-bg:            rgba(43, 108, 176, 0.10);
+
+  /* ─── 텍스트 ─── */
+  --color-text-primary:       #1A202C;
+  --color-text-secondary:     #718096;
+  --color-text-disabled:      #A0AEC0;
+  --color-text-inverse:       #FFFFFF;
+
+  /* ─── 배경 ─── */
+  --color-bg-page:            #F0F4F0;   /* 전체 페이지 배경 (연한 그린 틴트) */
+  --color-bg-card:            #FFFFFF;   /* 카드, 패널 배경 */
+  --color-bg-input:           #F7FAF8;   /* 입력 필드 배경 */
+  --color-bg-disabled:        #EDF2EF;   /* 비활성 입력 배경 */
+
+  /* ─── 테두리 ─── */
+  --color-border:             #E2E8F0;
+  --color-border-focus:       #52B788;   /* 포커스 링 — caddy primary 기준 */
+  --color-border-error:       #E53E3E;
+
+  /* ─── 사이드바 (ManagerLayout 전용) ─── */
+  --color-sidebar-bg:         #1B4332;   /* 아주 진한 녹색 — 사이드바 배경 */
+  --color-sidebar-text:       #D8F3DC;   /* 사이드바 기본 텍스트 */
+  --color-sidebar-active-bg:  #2D6A4F;   /* 활성 메뉴 배경 */
+  --color-sidebar-active-text:#FFFFFF;
+  --color-sidebar-hover-bg:   rgba(255, 255, 255, 0.08);
+
+  /* ─── 그림자 ─── */
+  --shadow-small:   0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-medium:  0 4px 12px rgba(0, 0, 0, 0.10);
+  --shadow-large:   0 10px 40px rgba(0, 0, 0, 0.14);
+
+  /* ─── 간격 ─── */
+  --space-4:   4px;
+  --space-8:   8px;
+  --space-12:  12px;
+  --space-16:  16px;
+  --space-20:  20px;
+  --space-24:  24px;
+  --space-32:  32px;
+  --space-40:  40px;
+  --space-48:  48px;
+
+  /* ─── 라운드 ─── */
+  --radius-4:   4px;
+  --radius-6:   6px;
+  --radius-8:   8px;
+  --radius-10:  10px;
+  --radius-12:  12px;
+  --radius-full: 9999px;
+
+  /* ─── 타이포그래피 ─── */
+  --font-size-heading-1:  28px;
+  --font-size-heading-2:  22px;
+  --font-size-heading-3:  18px;
+  --font-size-body:       15px;
+  --font-size-body-sm:    14px;
+  --font-size-label:      13px;
+  --font-size-detail:     12px;
+
+  /* ─── 트랜지션 ─── */
+  --transition-fast:   0.15s ease;
+  --transition-normal: 0.2s ease;
+}

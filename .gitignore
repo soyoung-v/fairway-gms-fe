@@ -34,3 +34,9 @@ coverage
 
 # Vitest
 __screenshots__/
+
+# docs
+AGENTS.md
+CLAUDE.md
+.agent-docs/
+.serena
