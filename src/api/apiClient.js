@@ -1,14 +1,15 @@
 import axios from 'axios'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useGolfCourseStore } from '@/stores/useGolfCourseStore'
 
 // 토큰 재발급 중 실패한 요청을 큐에 보관했다가 재시도한다
 let isRefreshing = false
 let failedQueue = []
 
-function processQueue(error, token = null) {
+function processQueue(error) {
   failedQueue.forEach(({ resolve, reject }) => {
     if (error) reject(error)
-    else resolve(token)
+    else resolve()
   })
   failedQueue = []
 }
@@ -20,31 +21,26 @@ async function getRouter() {
 }
 
 // 모든 API 요청에 사용하는 공통 Axios 인스턴스
+// 인증은 HttpOnly Cookie로 처리된다 — withCredentials: true 하나로 충분
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
-  withCredentials: true,  // HttpOnly 쿠키 자동 전송 (rt 쿠키 경로 제한)
+  withCredentials: true,
   timeout: 15000,
 })
 
 // ─── 요청 인터셉터 ────────────────────────────────────────────────────────────
-// Authorization 헤더 주입 및 Admin course-scoped 헤더 설정
+// Authorization 헤더는 설정하지 않는다. at 쿠키가 자동 전송된다.
+// Admin이 course-scoped API를 호출할 때만 X-Selected-Golf-Course-Id를 추가한다.
 apiClient.interceptors.request.use((config) => {
   const authStore = useAuthStore()
 
-  // Access Token을 Authorization 헤더에 주입한다
-  if (authStore.accessToken) {
-    config.headers['Authorization'] = `Bearer ${authStore.accessToken}`
-  }
-
-  // Admin이 특정 골프장 대상 API를 호출할 때만 X-Selected-Golf-Course-Id를 전달한다.
-  // Manager/Caddy는 백엔드가 JWT의 소속 골프장을 기준으로 판단하므로 보내지 않는다.
+  // Admin의 course-scoped API 호출 시 선택된 골프장 ID를 헤더로 전달한다.
+  // Manager/Caddy는 백엔드가 JWT 소속 골프장 기준으로 처리하므로 보내지 않는다.
   if (authStore.isAdmin) {
-    // useGolfCourseStore 구현 후 아래 주석을 해제한다
-    // const { useGolfCourseStore } = await import('@/stores/useGolfCourseStore')
-    // const golfCourseStore = useGolfCourseStore()
-    // if (golfCourseStore.selectedGolfCourseId) {
-    //   config.headers['X-Selected-Golf-Course-Id'] = golfCourseStore.selectedGolfCourseId
-    // }
+    const golfCourseStore = useGolfCourseStore()
+    if (golfCourseStore.selectedGolfCourseId) {
+      config.headers['X-Selected-Golf-Course-Id'] = golfCourseStore.selectedGolfCourseId
+    }
   }
 
   return config
@@ -57,46 +53,40 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config
     const status = error.response?.status
 
-    // ── 401 Unauthorized: 토큰 만료 처리 ──────────────────────────────────
+    // ── 401 Unauthorized: at 쿠키 만료 — rt 쿠키로 재발급 시도 ──────────────
     if (status === 401 && !originalRequest._retry) {
       // 로그인 API의 401은 비밀번호 오류 — 인터셉터에서 처리하지 않고 View에서 처리한다
       if (originalRequest.url?.includes('/auth/login')) {
         return Promise.reject(error)
       }
 
-      // 재발급 중이면 큐에 추가하고 새 토큰 발급을 기다린다
+      // 재발급 중이면 큐에 추가하고 새 쿠키 발급을 기다린다
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })
-        }).then((token) => {
-          originalRequest.headers['Authorization'] = `Bearer ${token}`
-          return apiClient(originalRequest)
-        }).catch((err) => Promise.reject(err))
+        }).then(() => apiClient(originalRequest))
+          .catch((err) => Promise.reject(err))
       }
 
       originalRequest._retry = true
       isRefreshing = true
 
       try {
-        const authStore = useAuthStore()
-
-        // 인터셉터 재진입을 막기 위해 raw axios로 재발급 요청한다
-        const refreshRes = await axios.post(
+        // rt 쿠키는 withCredentials: true로 자동 전송된다. 요청 바디 불필요.
+        // 인터셉터 재진입을 막기 위해 raw axios 인스턴스로 호출한다.
+        await axios.post(
           `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/auth/token/refresh`,
-          { refreshToken: authStore.refreshToken },
+          {},
           { withCredentials: true },
         )
 
-        const newToken = refreshRes.data?.data?.accessToken
-        authStore.setAuth({ accessToken: newToken })
-        processQueue(null, newToken)
-
-        originalRequest.headers['Authorization'] = `Bearer ${newToken}`
+        // 재발급 성공 — 새 at 쿠키가 Set-Cookie로 설정됨. 큐 해제 후 원래 요청 재시도.
+        processQueue(null)
         return apiClient(originalRequest)
       } catch (refreshError) {
-        processQueue(refreshError, null)
+        processQueue(refreshError)
         const authStore = useAuthStore()
-        authStore.logout()
+        await authStore.logout()
         const router = await getRouter()
         router.push('/login')
         return Promise.reject(refreshError)
@@ -105,7 +95,7 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // ── 403 Forbidden: 비즈니스 에러코드 vs 순수 권한 없음 분기 ──────────
+    // ── 403 Forbidden: 비즈니스 에러코드 vs 순수 권한 없음 분기 ──────────────
     if (status === 403) {
       const errorCode = error.response?.data?.error?.code ?? ''
       // 비즈니스 에러코드 패턴: /^[A-Z]+_\d+_\d+$/ (예: CADDY_403_01)

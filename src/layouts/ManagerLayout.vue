@@ -3,10 +3,12 @@
 import { computed, provide, ref } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useGolfCourseStore } from '@/stores/useGolfCourseStore'
 
 const route      = useRoute()
 const router     = useRouter()
-const authStore  = useAuthStore()
+const authStore       = useAuthStore()
+const golfCourseStore = useGolfCourseStore()
 
 // ─── 헤더: 날짜 및 골프장 정보 ────────────────────────────────────────────────
 
@@ -16,13 +18,10 @@ const todayStr = computed(() => {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} (${days[d.getDay()]})`
 })
 
-// Admin은 선택 골프장, Manager는 소속 골프장 이름을 표시한다.
-// useGolfCourseStore 구현 후 selectedCourse?.name을 참조한다.
+// Admin은 선택 골프장, Manager는 소속 골프장 이름을 표시한다
 const currentGolfCourseName = computed(() => {
   if (authStore.isAdmin) {
-    // const golfCourseStore = useGolfCourseStore()
-    // return golfCourseStore.selectedCourse?.name || '골프장 미선택'
-    return '골프장 미선택'
+    return golfCourseStore.selectedGolfCourseName || '골프장 미선택'
   }
   return authStore.golfCourseName || '소속 골프장'
 })

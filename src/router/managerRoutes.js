@@ -126,12 +126,6 @@ export default [
         meta: { requiresAuth: true, roles: ['ADMIN'], layout: 'manager', title: 'Manager 가입 승인', uiId: 'UI-M027' },
       },
 
-      // ── 승인 대기 화면 ──
-      {
-        path: 'pending',
-        component: () => import('@/views/common/PendingPage.vue'),
-        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'auth', title: '승인 대기' },
-      },
     ],
   },
 ]

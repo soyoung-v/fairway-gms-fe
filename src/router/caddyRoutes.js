@@ -64,12 +64,6 @@ export default [
         meta: { ...caddyMeta, title: '내 정보', uiId: 'UI-C011' },
       },
 
-      // 승인 대기 화면
-      {
-        path: 'pending',
-        component: () => import('@/views/common/PendingPage.vue'),
-        meta: { requiresAuth: true, roles: ['CADDY'], layout: 'auth', title: '승인 대기' },
-      },
     ],
   },
 ]

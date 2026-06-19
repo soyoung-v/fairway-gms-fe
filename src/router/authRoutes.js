@@ -30,6 +30,19 @@ export default [
         component: () => import('@/views/auth/password/PasswordResetView.vue'),
         meta: { requiresAuth: false, layout: 'auth', title: '비밀번호 재설정' },
       },
+      // 승인 대기 / 거절 안내 — 사이드바 없이 AuthLayout에서 렌더링한다
+      {
+        path: 'admin/pending',
+        name: 'admin-pending',
+        component: () => import('@/views/common/PendingPage.vue'),
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'auth', title: '승인 대기' },
+      },
+      {
+        path: 'caddy/pending',
+        name: 'caddy-pending',
+        component: () => import('@/views/common/PendingPage.vue'),
+        meta: { requiresAuth: true, roles: ['CADDY'], layout: 'auth', title: '승인 대기' },
+      },
     ],
   },
 ]
