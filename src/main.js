@@ -7,10 +7,16 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 const app = createApp(App)
 
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
 app.use(router)
+
+// 앱 초기화 시 localStorage에서 인증 정보를 복원한다
+const authStore = useAuthStore()
+authStore.restoreAuth()
 
 app.mount('#app')
