@@ -64,7 +64,15 @@ const menuDefinitions = [
     items: [
       { label: '캐디 배정',      path: 'assignment',         icon: 'assign',   roles: ['MANAGER'] },
       { label: '배정 이력',      path: 'assignment/history', icon: 'history',  roles: ['MANAGER'] },
-      { label: '카트 배정',      path: 'assignment/carts',   icon: 'cart',     roles: ['MANAGER'] },
+      { label: '카트 배정',      path: 'assignment/carts',      icon: 'cart',   roles: ['MANAGER'] },
+      { label: '코스별 배정표',  path: 'assignment/by-course',  icon: 'grid',   roles: ['MANAGER'] },
+    ],
+  },
+  {
+    label: 'COURSE',
+    items: [
+      { label: '코스 관리', path: 'courses', icon: 'course' },
+      { label: '카트 관리', path: 'carts',   icon: 'cart' },
     ],
   },
   {

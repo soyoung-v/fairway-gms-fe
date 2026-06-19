@@ -27,6 +27,16 @@ export default [
         meta: { ...managerMeta, title: '내 정보', uiId: 'UI-M023' },
       },
       {
+        path: 'courses',
+        component: () => import('@/views/manager/course/CourseManageView.vue'),
+        meta: { ...managerMeta, title: '코스 관리', uiId: 'UI-M005' },
+      },
+      {
+        path: 'carts',
+        component: () => import('@/views/manager/cart/CartManageView.vue'),
+        meta: { ...managerMeta, title: '카트 관리', uiId: 'UI-M006' },
+      },
+      {
         path: 'caddies',
         component: () => import('@/views/manager/caddy/CaddieListView.vue'),
         meta: { ...managerMeta, title: '캐디 목록', uiId: 'UI-M007' },
@@ -77,6 +87,11 @@ export default [
         path: 'assignment/carts',
         component: () => import('@/views/manager/assignment/CartAssignmentView.vue'),
         meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '카트 배정', uiId: 'UI-M016' },
+      },
+      {
+        path: 'assignment/by-course',
+        component: () => import('@/views/manager/assignment/CourseAssignmentView.vue'),
+        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '코스별 배정표', uiId: 'UI-M017' },
       },
       {
         path: 'caddie-approvals',
