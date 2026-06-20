@@ -1,18 +1,15 @@
 <script setup>
 // 계정 관리 (UI-M003) — Admin 전용
-// Manager 계정 목록 조회·역할 변경·소속 골프장 변경
-import { onMounted, ref, computed, reactive } from 'vue'
+// Manager 계정 목록 조회, ACTIVE Manager 퇴사 처리
+import { onMounted, ref, computed } from 'vue'
 import userApi from '@/api/userApi'
-import golfCourseApi from '@/api/golfCourseApi'
 import BaseBadge from '@/components/common/BaseBadge.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
-import BaseInput from '@/components/common/BaseInput.vue'
-import BaseModal from '@/components/common/BaseModal.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import BaseLoading from '@/components/common/BaseLoading.vue'
 import BaseEmpty from '@/components/common/BaseEmpty.vue'
 
 const list         = ref([])
-const golfCourses  = ref([])
 const loading      = ref(false)
 const error        = ref('')
 const statusFilter = ref('ALL')
@@ -22,87 +19,29 @@ const filteredList = computed(() => {
   return list.value.filter(m => m.status === statusFilter.value)
 })
 
-// ─── 역할 변경 모달 ──────────────────────────────────────────────
-const showRole      = ref(false)
-const roleTarget    = ref(null)
-const roleValue     = ref('MANAGER')
-const roleError     = ref('')
-const changingRole  = ref(false)
+// ─── 퇴사 처리 확인 모달 ─────────────────────────────────────────
+const withdrawTarget  = ref(null)
+const showWithdraw    = ref(false)
+const withdrawing     = ref(false)
 
-const ROLES = [
-  { value: 'ADMIN',   label: '플랫폼 관리자 (Admin)' },
-  { value: 'MANAGER', label: '매니저 (Manager)' },
-]
-
-function openRoleModal(manager) {
-  roleTarget.value = manager
-  roleValue.value  = manager.role || 'MANAGER'
-  roleError.value  = ''
-  showRole.value   = true
+function openWithdrawModal(manager) {
+  withdrawTarget.value = manager
+  showWithdraw.value   = true
 }
 
-async function handleRoleChange() {
-  roleError.value = ''
-  changingRole.value = true
+async function handleWithdraw() {
+  if (!withdrawTarget.value) return
+  withdrawing.value = true
   try {
-    await userApi.updateUserRole(roleTarget.value.userId, roleValue.value)
-    const idx = list.value.findIndex(m => m.userId === roleTarget.value.userId)
-    if (idx !== -1) list.value[idx] = { ...list.value[idx], role: roleValue.value }
-    showRole.value = false
+    await userApi.withdrawManager(withdrawTarget.value.userId)
+    const idx = list.value.findIndex(m => m.userId === withdrawTarget.value.userId)
+    if (idx !== -1) list.value[idx] = { ...list.value[idx], status: 'WITHDRAWN' }
+    showWithdraw.value = false
   } catch (err) {
     const code = err.response?.data?.error?.code || ''
-    roleError.value = code === 'INVALID_ROLE'
-      ? '유효하지 않은 역할입니다.'
-      : '역할 변경에 실패했습니다. 백엔드 구현을 확인해 주세요.'
+    alert(code === 'USER_NOT_FOUND' ? '사용자를 찾을 수 없습니다.' : '퇴사 처리에 실패했습니다.')
   } finally {
-    changingRole.value = false
-  }
-}
-
-// ─── 골프장 소속 변경 모달 ───────────────────────────────────────
-const showCourse      = ref(false)
-const courseTarget    = ref(null)
-const courseValue     = ref('')
-const courseError     = ref('')
-const changingCourse  = ref(false)
-
-function openCourseModal(manager) {
-  courseTarget.value = manager
-  courseValue.value  = manager.golfCourseId ? String(manager.golfCourseId) : ''
-  courseError.value  = ''
-  showCourse.value   = true
-}
-
-async function handleCourseChange() {
-  courseError.value = ''
-  if (!courseValue.value.trim()) {
-    courseError.value = '골프장 ID를 입력해 주세요.'
-    return
-  }
-  changingCourse.value = true
-  try {
-    await userApi.updateUserGolfCourse(courseTarget.value.userId, Number(courseValue.value))
-    const idx = list.value.findIndex(m => m.userId === courseTarget.value.userId)
-    if (idx !== -1) {
-      const matched = golfCourses.value.find(c => c.golfCourseId === Number(courseValue.value))
-      list.value[idx] = {
-        ...list.value[idx],
-        golfCourseId:   Number(courseValue.value),
-        golfCourseName: matched?.name || courseValue.value,
-      }
-    }
-    showCourse.value = false
-  } catch (err) {
-    const code = err.response?.data?.error?.code || ''
-    if (code === 'GOLF_COURSE_NOT_FOUND') {
-      courseError.value = '존재하지 않는 골프장 ID입니다.'
-    } else if (code === 'USER_NOT_FOUND') {
-      courseError.value = '사용자를 찾을 수 없습니다.'
-    } else {
-      courseError.value = '소속 변경에 실패했습니다. 백엔드 구현을 확인해 주세요.'
-    }
-  } finally {
-    changingCourse.value = false
+    withdrawing.value = false
   }
 }
 
@@ -111,12 +50,8 @@ async function fetchList() {
   loading.value = true
   error.value   = ''
   try {
-    const [managerData, courseData] = await Promise.all([
-      userApi.getManagers({ size: 100 }),
-      golfCourseApi.getGolfCourses(),
-    ])
-    list.value        = Array.isArray(managerData) ? managerData : (managerData?.content ?? [])
-    golfCourses.value = Array.isArray(courseData)  ? courseData  : (courseData?.content  ?? [])
+    const data = await userApi.getManagers({ size: 100 })
+    list.value = Array.isArray(data) ? data : (data?.content ?? [])
   } catch {
     error.value = '계정 목록을 불러오지 못했습니다.'
   } finally {
@@ -124,14 +59,13 @@ async function fetchList() {
   }
 }
 
-// 상태·역할 표시 헬퍼
 function badgeType(status) {
   const map = { ACTIVE: 'success', PENDING: 'warning', REJECTED: 'danger', WITHDRAWN: 'disabled' }
   return map[status] || 'disabled'
 }
 
 function statusLabel(status) {
-  const map = { ACTIVE: '활성', PENDING: '승인 대기', REJECTED: '거절됨', WITHDRAWN: '탈퇴' }
+  const map = { ACTIVE: '활성', PENDING: '승인 대기', REJECTED: '거절됨', WITHDRAWN: '퇴사' }
   return map[status] || status
 }
 
@@ -157,6 +91,7 @@ onMounted(fetchList)
           { value: 'ACTIVE',   label: '활성' },
           { value: 'PENDING',  label: '승인 대기' },
           { value: 'REJECTED', label: '거절됨' },
+          { value: 'WITHDRAWN', label: '퇴사' },
         ]"
         :key="tab.value"
         class="status-tab"
@@ -205,93 +140,33 @@ onMounted(fetchList)
             <td>{{ manager.golfCourseName || '-' }}</td>
             <td class="td-actions">
               <BaseButton
-                variant="outline"
+                v-if="manager.status === 'ACTIVE'"
+                variant="danger"
                 size="sm"
-                @click="openRoleModal(manager)"
+                @click="openWithdrawModal(manager)"
               >
-                역할 변경
+                퇴사 처리
               </BaseButton>
-              <BaseButton
-                variant="outline"
-                size="sm"
-                @click="openCourseModal(manager)"
-              >
-                골프장 변경
-              </BaseButton>
+              <span v-else class="no-action">-</span>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- 역할 변경 모달 -->
-    <BaseModal
-      :visible="showRole"
-      title="역할 변경"
-      :subtitle="roleTarget ? `${roleTarget.name} (${roleTarget.email})` : ''"
-      @close="showRole = false"
-    >
-      <div class="change-form">
-        <label class="change-form__label">변경할 역할</label>
-        <div class="change-form__radio-group">
-          <label
-            v-for="r in ROLES"
-            :key="r.value"
-            class="change-form__radio"
-          >
-            <input
-              v-model="roleValue"
-              type="radio"
-              :value="r.value"
-              :disabled="changingRole"
-            />
-            {{ r.label }}
-          </label>
-        </div>
-        <p v-if="roleError" class="change-form__error">{{ roleError }}</p>
-      </div>
-      <template #footer>
-        <BaseButton variant="outline" :disabled="changingRole" @click="showRole = false">취소</BaseButton>
-        <BaseButton variant="primary" :loading="changingRole" @click="handleRoleChange">변경</BaseButton>
-      </template>
-    </BaseModal>
-
-    <!-- 골프장 소속 변경 모달 -->
-    <BaseModal
-      :visible="showCourse"
-      title="소속 골프장 변경"
-      :subtitle="courseTarget ? `${courseTarget.name} (${courseTarget.email})` : ''"
-      @close="showCourse = false"
-    >
-      <div class="change-form">
-        <label class="change-form__label">골프장 ID <span class="required">*</span></label>
-        <BaseInput
-          v-model="courseValue"
-          type="number"
-          placeholder="골프장 ID (숫자)"
-          :error="courseError"
-          :disabled="changingCourse"
-        />
-        <div v-if="golfCourses.length" class="change-form__hint">
-          <p class="change-form__hint-label">등록된 골프장:</p>
-          <ul class="change-form__golf-list">
-            <li
-              v-for="c in golfCourses"
-              :key="c.golfCourseId"
-              class="change-form__golf-item"
-              @click="courseValue = String(c.golfCourseId)"
-            >
-              <span class="golf-id">{{ c.golfCourseId }}</span>
-              <span>{{ c.name }}</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <template #footer>
-        <BaseButton variant="outline" :disabled="changingCourse" @click="showCourse = false">취소</BaseButton>
-        <BaseButton variant="primary" :loading="changingCourse" @click="handleCourseChange">변경</BaseButton>
-      </template>
-    </BaseModal>
+    <!-- 퇴사 처리 확인 모달 -->
+    <ConfirmModal
+      :visible="showWithdraw"
+      title="Manager를 퇴사 처리하시겠습니까?"
+      subtitle="퇴사 처리 후에는 해당 계정으로 로그인할 수 없습니다."
+      :item-name="withdrawTarget?.name"
+      item-label="대상"
+      confirm-text="퇴사 처리"
+      confirm-type="danger"
+      :loading="withdrawing"
+      @confirm="handleWithdraw"
+      @cancel="showWithdraw = false"
+    />
   </div>
 </template>
 
@@ -379,11 +254,7 @@ onMounted(fetchList)
 
 .td-name  { font-weight: 600; }
 .td-email { color: var(--color-text-secondary); }
-
-.td-actions {
-  display: flex;
-  gap: var(--space-8);
-}
+.td-actions { white-space: nowrap; }
 
 .role-chip {
   display: inline-block;
@@ -395,80 +266,8 @@ onMounted(fetchList)
   font-weight: 600;
 }
 
-/* ─── 변경 폼 ─── */
-.change-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-12);
-}
-
-.change-form__label {
-  font-size: var(--font-size-body-sm);
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-
-.change-form__radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-}
-
-.change-form__radio {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  font-size: var(--font-size-body-sm);
-  color: var(--color-text-primary);
-  cursor: pointer;
-}
-
-.change-form__error {
-  font-size: var(--font-size-body-sm);
-  color: var(--color-danger);
-  padding: var(--space-8) var(--space-12);
-  background: var(--color-danger-bg);
-  border-radius: var(--radius-6);
-}
-
-.change-form__hint {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-8);
-  padding: var(--space-12);
-}
-
-.change-form__hint-label {
-  font-size: var(--font-size-detail);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-8);
-}
-
-.change-form__golf-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  max-height: 160px;
-  overflow-y: auto;
-}
-
-.change-form__golf-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  padding: var(--space-6) var(--space-8);
-  border-radius: var(--radius-6);
-  font-size: var(--font-size-body-sm);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.change-form__golf-item:hover { background: var(--color-bg-page); }
-
-.golf-id {
+.no-action {
   color: var(--color-text-secondary);
   font-size: var(--font-size-detail);
-  min-width: 24px;
 }
-
-.required { color: var(--color-danger); }
 </style>

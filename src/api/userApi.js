@@ -22,14 +22,9 @@ export function rejectManager(userId, reason) {
   return apiClient.patch(`/api/auth/managers/${userId}/reject`, { reason }).then(res => res.data?.data)
 }
 
-// 사용자 권한 변경 (Admin 전용)
-export function updateUserRole(userId, role) {
-  return apiClient.patch(`/api/auth/users/${userId}/role`, { role }).then(res => res.data?.data)
-}
-
-// 사용자 소속 골프장 변경 (Admin 전용)
-export function updateUserGolfCourse(userId, golfCourseId) {
-  return apiClient.patch(`/api/auth/users/${userId}/golf-course`, { golfCourseId }).then(res => res.data?.data)
+// Manager 퇴사 처리 (Admin 전용) — ACTIVE Manager만 처리 가능
+export function withdrawManager(userId) {
+  return apiClient.patch(`/api/admin/users/${userId}/withdraw`).then(res => res.data?.data)
 }
 
 export default {
@@ -37,6 +32,5 @@ export default {
   getPendingCaddies,
   approveManager,
   rejectManager,
-  updateUserRole,
-  updateUserGolfCourse,
+  withdrawManager,
 }
