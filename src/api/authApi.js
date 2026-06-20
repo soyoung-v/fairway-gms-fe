@@ -15,6 +15,12 @@ export function getMyInfo() {
   return apiClient.get('/api/auth/me').then(res => res.data?.data)
 }
 
+// 이메일 중복 확인 — 회원가입 폼에서 이메일 입력 직후 호출한다
+export function checkEmail(email) {
+  return apiClient.get('/api/auth/check-email', { params: { email } })
+    .then(res => res.data?.data)
+}
+
 // Manager 회원가입
 export function signupManager(payload) {
   return apiClient.post('/api/auth/signup/manager', payload)
@@ -39,6 +45,7 @@ export default {
   login,
   logout,
   getMyInfo,
+  checkEmail,
   signupManager,
   signupCaddy,
   requestPasswordReset,
