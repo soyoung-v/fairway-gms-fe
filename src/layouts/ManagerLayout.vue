@@ -1,9 +1,10 @@
 <script setup>
 // Manager/Admin Web 운영 화면 레이아웃 — 사이드바 + 상단 헤더 구조
-import { computed, provide, ref } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useGolfCourseStore } from '@/stores/useGolfCourseStore'
+import { getGolfCourses } from '@/api/golfCourseApi'
 
 const route      = useRoute()
 const router     = useRouter()
@@ -18,7 +19,7 @@ const todayStr = computed(() => {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} (${days[d.getDay()]})`
 })
 
-// Admin은 선택 골프장, Manager는 소속 골프장 이름을 표시한다
+// Admin은 선택 골프장(클릭 가능), Manager는 소속 골프장(고정 표시)
 const currentGolfCourseName = computed(() => {
   if (authStore.isAdmin) {
     return golfCourseStore.selectedGolfCourseName || '골프장 미선택'
@@ -26,7 +27,51 @@ const currentGolfCourseName = computed(() => {
   return authStore.golfCourseName || '소속 골프장'
 })
 
-const topbarSub = computed(() => `${todayStr.value} / ${currentGolfCourseName.value}`)
+const topbarDate = computed(() => todayStr.value)
+
+// ─── Admin 골프장 선택 드롭다운 ────────────────────────────────────────────────
+
+const showCourseDropdown  = ref(false)
+const courseListLoading   = ref(false)
+
+function toggleCourseDropdown() {
+  if (!authStore.isAdmin) return
+  showCourseDropdown.value = !showCourseDropdown.value
+}
+
+function selectCourse(course) {
+  golfCourseStore.selectGolfCourse(course.golfCourseId, course.name)
+  showCourseDropdown.value = false
+}
+
+// 드롭다운 외부 클릭 시 닫기
+function onClickOutside(e) {
+  if (!e.target.closest('.course-selector')) {
+    showCourseDropdown.value = false
+  }
+}
+
+// ─── 초기화: restoreSelection + Admin 골프장 목록 로드 ─────────────────────────
+
+onMounted(async () => {
+  golfCourseStore.restoreSelection()
+  if (authStore.isAdmin && !golfCourseStore.golfCourseList.length) {
+    courseListLoading.value = true
+    try {
+      const data = await getGolfCourses()
+      golfCourseStore.setGolfCourseList(Array.isArray(data) ? data : (data?.content ?? []))
+    } catch {
+      // 목록 로드 실패는 드롭다운 열었을 때 빈 상태로 표시
+    } finally {
+      courseListLoading.value = false
+    }
+  }
+  document.addEventListener('click', onClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', onClickOutside)
+})
 
 // ─── 헤더 액션: 현재 화면의 대표 액션(등록 모달 등)을 연결한다 ──────────────────
 // 자식 View가 inject('registerOpenModal')로 자신의 모달 열기 함수를 등록한다
@@ -180,7 +225,40 @@ const sidebarCollapsed = ref(false)
         <div class="topbar__left">
           <!-- 현재 페이지 제목 -->
           <h1 class="topbar__title">{{ route.meta.title || 'FairwayGMS' }}</h1>
-          <span class="topbar__sub">{{ topbarSub }}</span>
+          <span class="topbar__date">{{ topbarDate }}</span>
+
+          <!-- Admin: 클릭해서 골프장 선택 / Manager: 소속 골프장 고정 표시 -->
+          <div class="course-selector">
+            <button
+              v-if="authStore.isAdmin"
+              class="course-selector__btn"
+              :class="{ 'is-unset': !golfCourseStore.selectedGolfCourseId }"
+              type="button"
+              @click.stop="toggleCourseDropdown"
+            >
+              {{ currentGolfCourseName }}
+              <span class="course-selector__arrow">▾</span>
+            </button>
+            <span v-else class="course-selector__fixed">{{ currentGolfCourseName }}</span>
+
+            <!-- 드롭다운 -->
+            <div v-if="showCourseDropdown" class="course-dropdown">
+              <p v-if="courseListLoading" class="course-dropdown__loading">로딩 중...</p>
+              <p v-else-if="!golfCourseStore.golfCourseList.length" class="course-dropdown__empty">
+                등록된 골프장이 없습니다.
+              </p>
+              <button
+                v-for="course in golfCourseStore.golfCourseList"
+                :key="course.golfCourseId"
+                class="course-dropdown__item"
+                :class="{ 'is-selected': golfCourseStore.selectedGolfCourseId === course.golfCourseId }"
+                type="button"
+                @click.stop="selectCourse(course)"
+              >
+                {{ course.name }}
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="topbar__right">
@@ -338,9 +416,91 @@ const sidebarCollapsed = ref(false)
   color: var(--color-text-primary);
 }
 
-.topbar__sub {
+.topbar__date {
   font-size: var(--font-size-detail);
   color: var(--color-text-secondary);
+}
+
+/* ─── 골프장 선택기 ─── */
+.course-selector {
+  position: relative;
+}
+
+.course-selector__btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-10);
+  font-size: var(--font-size-detail);
+  font-weight: 600;
+  color: var(--manager-primary);
+  background: var(--manager-primary-light);
+  border: 1px solid var(--manager-primary);
+  border-radius: var(--radius-6);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.course-selector__btn:hover {
+  background: var(--manager-primary-hover-light, var(--manager-primary-light));
+}
+
+.course-selector__btn.is-unset {
+  color: var(--color-text-secondary);
+  background: var(--color-bg-page);
+  border-color: var(--color-border);
+}
+
+.course-selector__arrow {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.course-selector__fixed {
+  font-size: var(--font-size-detail);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* ─── 드롭다운 ─── */
+.course-dropdown {
+  position: absolute;
+  top: calc(100% + var(--space-4));
+  left: 0;
+  min-width: 180px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-8);
+  box-shadow: var(--shadow-medium);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.course-dropdown__loading,
+.course-dropdown__empty {
+  padding: var(--space-12) var(--space-16);
+  font-size: var(--font-size-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.course-dropdown__item {
+  display: block;
+  width: 100%;
+  padding: var(--space-10) var(--space-16);
+  font-size: var(--font-size-body-sm);
+  color: var(--color-text-primary);
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.course-dropdown__item:hover {
+  background: var(--manager-primary-light);
+}
+
+.course-dropdown__item.is-selected {
+  color: var(--manager-primary);
+  font-weight: 600;
+  background: var(--manager-primary-light);
 }
 
 .topbar__right {
