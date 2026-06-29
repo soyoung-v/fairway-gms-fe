@@ -88,7 +88,9 @@ apiClient.interceptors.response.use(
         const authStore = useAuthStore()
         await authStore.logout()
         const router = await getRouter()
-        router.push('/login')
+        // 현재 경로가 /caddy 계열이면 캐디 로그인으로, 아니면 Manager 로그인으로 보낸다
+        const currentPath = router.currentRoute?.value?.path || ''
+        router.push(currentPath.startsWith('/caddy') ? '/caddy/login' : '/login')
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false

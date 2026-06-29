@@ -82,8 +82,10 @@ onUnmounted(() => {
 })
 
 async function handleLogout() {
+  // 로그아웃 전 역할을 먼저 확인해야 한다 — logout() 후에는 role이 초기화된다
+  const isCaddy = authStore.isCaddy
   await authStore.logout()
-  router.replace('/login')
+  router.replace(isCaddy ? '/caddy/login' : '/login')
 }
 </script>
 

@@ -1,5 +1,5 @@
 <script setup>
-// 로그인 화면 (UI-M001 / UI-C001) — Manager/Admin/Caddy 공통
+// 로그인 화면 (UI-M001) — Manager/Admin Web 전용. Caddy는 /caddy/login 사용
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -114,11 +114,9 @@ function handleSocialLogin(provider) {
         </div>
       </div>
 
-      <!-- 하단 링크 -->
+      <!-- 하단 링크 — Manager/Admin 전용 -->
       <div class="login-card__links">
         <RouterLink to="/signup" class="login-card__link">Manager 회원가입</RouterLink>
-        <span class="login-card__link-sep">|</span>
-        <RouterLink to="/signup/caddy" class="login-card__link">Caddy 회원가입</RouterLink>
         <span class="login-card__link-sep">|</span>
         <RouterLink to="/password-reset" class="login-card__link">비밀번호 재설정</RouterLink>
       </div>

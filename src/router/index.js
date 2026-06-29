@@ -8,6 +8,7 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     // 루트 → 역할에 따라 리다이렉트
+    // 루트는 Manager/Admin Web 기본 진입점으로 redirect한다
     { path: '/', redirect: '/login' },
 
     ...authRoutes,
@@ -34,7 +35,7 @@ router.beforeEach((to) => {
   // ── 1. 인증 불필요 화면 ──────────────────────────────────────────────────
   if (!to.meta.requiresAuth) {
     // 이미 로그인된 사용자가 로그인/회원가입 페이지에 오면 역할 홈으로 이동
-    const publicPaths = ['/', '/login', '/signup', '/signup/caddy', '/password-reset']
+    const publicPaths = ['/', '/login', '/caddy/login', '/signup', '/signup/caddy', '/password-reset']
     if (authStore.isAuthenticated && publicPaths.includes(to.path)) {
       if (role === 'CADDY')    return '/caddy'
       if (role === 'MANAGER' || role === 'ADMIN') return '/admin/dashboard'
@@ -42,9 +43,10 @@ router.beforeEach((to) => {
     return true
   }
 
-  // ── 2. 비인증 사용자 → 로그인 ────────────────────────────────────────────
+  // ── 2. 비인증 사용자 → 역할 추정 후 로그인 페이지로 ──────────────────────
+  // 접근하려는 경로가 /caddy 계열이면 캐디 로그인으로, 아니면 Manager 로그인으로 보낸다
   if (!authStore.isAuthenticated) {
-    return '/login'
+    return to.path.startsWith('/caddy') ? '/caddy/login' : '/login'
   }
 
   // ── 3. PENDING / REJECTED 계정 → 승인 대기 화면 강제 이동 ────────────────

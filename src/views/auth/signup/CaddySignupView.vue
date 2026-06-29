@@ -115,7 +115,7 @@ async function handleSubmit() {
           가입 신청이 접수되었습니다.<br>
           관리자 승인 후 서비스를 이용하실 수 있습니다.
         </p>
-        <RouterLink to="/login">
+        <RouterLink to="/caddy/login">
           <BaseButton variant="primary" size="lg" class="caddy-signup__done-btn">
             로그인 화면으로
           </BaseButton>
@@ -226,7 +226,7 @@ async function handleSubmit() {
       </form>
 
       <div class="caddy-signup__footer">
-        <RouterLink to="/login" class="caddy-signup__login-link">
+        <RouterLink to="/caddy/login" class="caddy-signup__login-link">
           이미 계정이 있으신가요? 로그인
         </RouterLink>
       </div>
