@@ -5,8 +5,6 @@ import { onMounted, ref } from 'vue'
 import userApi from '@/api/userApi'
 import BaseBadge from '@/components/common/BaseBadge.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
-import BaseInput from '@/components/common/BaseInput.vue'
-import BaseModal from '@/components/common/BaseModal.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import BaseLoading from '@/components/common/BaseLoading.vue'
 import BaseEmpty from '@/components/common/BaseEmpty.vue'
@@ -20,7 +18,7 @@ async function fetchList() {
   loading.value = true
   error.value   = ''
   try {
-    const data = await userApi.getPendingCaddies({ size: 100 })
+    const data = await userApi.getPendingCaddies()
     list.value = Array.isArray(data) ? data : (data?.content ?? [])
   } catch {
     error.value = '캐디 가입 신청 목록을 불러오지 못했습니다.'
@@ -56,30 +54,22 @@ async function handleApprove() {
 }
 
 // ─── 거절 모달 ───────────────────────────────────────────────────
-const rejectTarget      = ref(null)
-const showReject        = ref(false)
-const rejectReason      = ref('')
-const rejectReasonError = ref('')
-const rejecting         = ref(false)
+// 백엔드 reject-caddie 엔드포인트는 현재 reason 파라미터를 받지 않는다
+const rejectTarget = ref(null)
+const showReject   = ref(false)
+const rejecting    = ref(false)
 
 function openRejectModal(caddie) {
-  rejectTarget.value      = caddie
-  rejectReason.value      = ''
-  rejectReasonError.value = ''
-  showReject.value        = true
+  rejectTarget.value = caddie
+  showReject.value   = true
 }
 
 async function handleReject() {
-  rejectReasonError.value = ''
-  if (!rejectReason.value.trim()) {
-    rejectReasonError.value = '거절 사유를 입력해 주세요.'
-    return
-  }
+  if (!rejectTarget.value) return
   rejecting.value = true
   try {
-    await userApi.rejectCaddie(rejectTarget.value.userId, rejectReason.value.trim())
-    // 거절 후 목록에서 제거한다
-    list.value   = list.value.filter(c => c.userId !== rejectTarget.value.userId)
+    await userApi.rejectCaddie(rejectTarget.value.userId)
+    list.value     = list.value.filter(c => c.userId !== rejectTarget.value.userId)
     showReject.value = false
   } catch (err) {
     const code = err.response?.data?.error?.code || ''
@@ -124,7 +114,7 @@ onMounted(fetchList)
           <tr v-for="caddie in list" :key="caddie.userId">
             <td class="td-name">{{ caddie.name }}</td>
             <td class="td-email">{{ caddie.email }}</td>
-            <td>{{ caddie.appliedAt ? caddie.appliedAt.slice(0, 10) : '—' }}</td>
+            <td>{{ caddie.createdAt ? caddie.createdAt.slice(0, 10) : '—' }}</td>
             <td>
               <BaseBadge type="warning">승인 대기</BaseBadge>
             </td>
@@ -151,28 +141,19 @@ onMounted(fetchList)
       @cancel="showApprove = false"
     />
 
-    <!-- 거절 모달 -->
-    <BaseModal
+    <!-- 거절 확인 모달 -->
+    <ConfirmModal
       :visible="showReject"
-      title="가입 거절"
-      :subtitle="rejectTarget ? `${rejectTarget.name} (${rejectTarget.email})` : ''"
-      @close="showReject = false"
-    >
-      <div class="reject-form">
-        <label class="reject-form__label">거절 사유 <span class="required">*</span></label>
-        <BaseInput
-          v-model="rejectReason"
-          placeholder="거절 사유를 입력해 주세요"
-          :error="rejectReasonError"
-          :disabled="rejecting"
-        />
-        <p v-if="rejectReasonError" class="reject-form__error">{{ rejectReasonError }}</p>
-      </div>
-      <template #footer>
-        <BaseButton variant="ghost" :disabled="rejecting" @click="showReject = false">취소</BaseButton>
-        <BaseButton variant="danger" :loading="rejecting" @click="handleReject">거절</BaseButton>
-      </template>
-    </BaseModal>
+      title="캐디 가입을 거절하시겠습니까?"
+      subtitle="거절 후에는 해당 계정으로 로그인할 수 없습니다."
+      :item-name="rejectTarget?.name"
+      item-label="신청자"
+      confirm-text="거절"
+      confirm-type="danger"
+      :loading="rejecting"
+      @confirm="handleReject"
+      @cancel="showReject = false"
+    />
   </div>
 </template>
 
@@ -244,23 +225,4 @@ onMounted(fetchList)
   gap: var(--space-8);
 }
 
-/* ─── 거절 폼 ─── */
-.reject-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-}
-
-.reject-form__label {
-  font-size: var(--font-size-body-sm);
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-
-.reject-form__error {
-  font-size: var(--font-size-detail);
-  color: var(--color-danger);
-}
-
-.required { color: var(--color-danger); }
 </style>
