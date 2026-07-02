@@ -37,10 +37,18 @@ export const useAuthStore = defineStore('auth', () => {
     _persist()
   }
 
-  // 로그아웃 — 서버에 로그아웃 요청 후 로컬 상태와 localStorage를 클리어한다
+  // 로그아웃 — FCM 토큰 해제(Caddy) → 서버 로그아웃 → 로컬 상태 초기화
   async function logout() {
+    // Caddy 역할인 경우 FCM 토큰을 먼저 해제한다 (실패 시 무시)
+    if (role.value === 'CADDY') {
+      try {
+        const { useNotificationStore } = await import('@/stores/useNotificationStore')
+        await useNotificationStore().unregisterFcmToken()
+      } catch {
+        // FCM 해제 실패는 로그아웃 흐름을 막지 않는다
+      }
+    }
     try {
-      // 서버에 로그아웃 요청해 at/rt 쿠키를 만료시킨다
       const apiClient = (await import('@/api/apiClient')).default
       await apiClient.post('/api/auth/logout')
     } catch {

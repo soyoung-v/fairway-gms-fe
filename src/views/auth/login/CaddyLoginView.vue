@@ -3,12 +3,14 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useNotificationStore } from '@/stores/useNotificationStore'
 import authApi from '@/api/authApi'
 import BaseButton from '@/components/common/BaseButton.vue'
 import BaseInput from '@/components/common/BaseInput.vue'
 
-const router    = useRouter()
-const authStore = useAuthStore()
+const router             = useRouter()
+const authStore          = useAuthStore()
+const notificationStore  = useNotificationStore()
 
 const form = reactive({ email: '', password: '' })
 const loading  = ref(false)
@@ -33,6 +35,8 @@ async function handleLogin() {
 
     authStore.login(data)
     // PENDING/REJECTED 상태는 router beforeEach guard가 /caddy/pending으로 리디렉션한다
+    // FCM 토큰 등록 — 실패해도 로그인 흐름을 막지 않는다
+    notificationStore.registerFcmToken().catch(() => {})
     router.push('/caddy')
   } catch (err) {
     const status = err.response?.status
