@@ -31,6 +31,11 @@ export function signupCaddy(payload) {
   return apiClient.post('/api/auth/signup/caddy', payload)
 }
 
+// 비밀번호 변경 — 현재 비밀번호 검증 후 새 비밀번호로 교체한다
+export function changePassword({ currentPassword, newPassword }) {
+  return apiClient.patch('/api/auth/me/password', { currentPassword, newPassword }).then(res => res.data?.data)
+}
+
 // 비밀번호 재설정 요청
 export function requestPasswordReset(email) {
   return apiClient.post('/api/auth/password-reset/request', { email })
@@ -48,6 +53,7 @@ export default {
   checkEmail,
   signupManager,
   signupCaddy,
+  changePassword,
   requestPasswordReset,
   confirmPasswordReset,
 }
