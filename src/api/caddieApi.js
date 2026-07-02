@@ -33,7 +33,7 @@ export function updateCaddieStatus(caddieId, status) {
 }
 
 // 캐디 퇴직 처리 — RESIGNED 상태 + 소프트 삭제 (caddie 도메인 API-305.5)
-// 주의: 계정 탈퇴(auth 도메인)는 userApi.withdrawCaddieAccount 사용
+// 캐디 프로필 퇴직 처리 — 계정 탈퇴와 별개로 캐디 도메인에서 RESIGNED 상태로 변경
 export function withdrawCaddie(caddieId) {
   return apiClient.patch(`/api/caddie/caddies/${caddieId}/withdraw`).then(res => res.data?.data)
 }
