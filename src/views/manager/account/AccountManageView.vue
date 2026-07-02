@@ -14,9 +14,11 @@ const loading      = ref(false)
 const error        = ref('')
 const statusFilter = ref('ALL')
 
+// 탭 필터는 클라이언트 사이드 — 전체를 한 번 불러온 뒤 role이 MANAGER인 계정만 표시
 const filteredList = computed(() => {
-  if (statusFilter.value === 'ALL') return list.value
-  return list.value.filter(m => m.status === statusFilter.value)
+  const managers = list.value.filter(u => u.role === 'MANAGER')
+  if (statusFilter.value === 'ALL') return managers
+  return managers.filter(m => m.status === statusFilter.value)
 })
 
 // ─── 퇴사 처리 확인 모달 ─────────────────────────────────────────
@@ -50,7 +52,7 @@ async function fetchList() {
   loading.value = true
   error.value   = ''
   try {
-    const data = await userApi.getManagers({ size: 100 })
+    const data = await userApi.getUsers()
     list.value = Array.isArray(data) ? data : (data?.content ?? [])
   } catch {
     error.value = '계정 목록을 불러오지 못했습니다.'

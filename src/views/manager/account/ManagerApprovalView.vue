@@ -35,7 +35,7 @@ async function handleApprove() {
   if (!approveTarget.value) return
   approving.value = true
   try {
-    await userApi.approveManager(approveTarget.value.userId)
+    await userApi.approveUser(approveTarget.value.userId)
     const idx = list.value.findIndex(m => m.userId === approveTarget.value.userId)
     if (idx !== -1) list.value[idx] = { ...list.value[idx], status: 'ACTIVE' }
     showApprove.value = false
@@ -69,7 +69,7 @@ async function handleReject() {
   }
   rejecting.value = true
   try {
-    await userApi.rejectManager(rejectTarget.value.userId, rejectReason.value.trim())
+    await userApi.rejectUser(rejectTarget.value.userId)
     const idx = list.value.findIndex(m => m.userId === rejectTarget.value.userId)
     if (idx !== -1) list.value[idx] = { ...list.value[idx], status: 'REJECTED' }
     showReject.value = false
@@ -86,8 +86,10 @@ async function fetchList() {
   loading.value = true
   error.value   = ''
   try {
-    const data = await userApi.getManagers({ size: 100 })
-    list.value = Array.isArray(data) ? data : (data?.content ?? [])
+    // getPendingUsers는 MANAGER+CADDY 전체를 반환 — MANAGER만 필터링
+    const data = await userApi.getPendingUsers()
+    const all = Array.isArray(data) ? data : (data?.content ?? [])
+    list.value = all.filter(u => u.role === 'MANAGER')
   } catch {
     error.value = 'Manager 목록을 불러오지 못했습니다.'
   } finally {
