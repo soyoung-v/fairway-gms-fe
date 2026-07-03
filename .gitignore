@@ -40,3 +40,6 @@ AGENTS.md
 CLAUDE.md
 .agent-docs/
 .serena
+
+# 빌드 시 자동 생성 — .env 값이 포함되므로 커밋하지 않는다
+public/firebase-messaging-sw.js
