@@ -235,7 +235,6 @@ onMounted(async () => {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: box-shadow var(--transition-fast);
-  active: { box-shadow: 0 0 0 2px var(--caddy-primary); }
 }
 
 .assignment-card:active { opacity: 0.85; }
