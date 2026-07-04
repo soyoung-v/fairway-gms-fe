@@ -21,14 +21,19 @@ export function checkEmail(email) {
     .then(res => res.data?.data)
 }
 
-// Manager 회원가입
-export function signupManager(payload) {
-  return apiClient.post('/api/auth/signup/manager', payload)
+// 회원가입 — role(MANAGER/CADDY)로 Manager/Caddy를 구분한다. 단일 엔드포인트 사용.
+export function signup(payload) {
+  return apiClient.post('/api/auth/signup', payload)
 }
 
-// Caddy 회원가입
+// Manager 회원가입 — role=MANAGER 고정
+export function signupManager(payload) {
+  return signup({ ...payload, role: 'MANAGER' })
+}
+
+// Caddy 회원가입 — role=CADDY 고정
 export function signupCaddy(payload) {
-  return apiClient.post('/api/auth/signup/caddy', payload)
+  return signup({ ...payload, role: 'CADDY' })
 }
 
 // 비밀번호 변경 — 현재 비밀번호 검증 후 새 비밀번호로 교체한다
@@ -51,6 +56,7 @@ export default {
   logout,
   getMyInfo,
   checkEmail,
+  signup,
   signupManager,
   signupCaddy,
   changePassword,
