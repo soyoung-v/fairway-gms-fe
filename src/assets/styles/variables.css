@@ -1,9 +1,15 @@
 :root {
-  /* ─── Manager / Admin Web Primary ─── */
+  /* ─── Manager Web Primary ─── */
   --manager-primary:          #2D6A4F;   /* 진한 녹색 — 버튼, 사이드바 활성 링크, 액센트 */
   --manager-primary-hover:    #235C43;   /* 버튼 hover */
   --manager-primary-light:    #D8F3DC;   /* 뱃지 배경, 연한 강조 */
   --manager-primary-contrast: #FFFFFF;   /* primary 버튼 위 텍스트 */
+
+  /* ─── Admin Web Primary — Manager와 분위기를 구분하는 딥네이비 ─── */
+  --admin-primary:            #1E3A5F;   /* 딥네이비 — Admin 로그인/액센트 */
+  --admin-primary-hover:      #16304D;   /* 버튼 hover */
+  --admin-primary-light:      #E3EAF3;   /* 뱃지 배경, 연한 강조 */
+  --admin-primary-contrast:   #FFFFFF;
 
   /* ─── Caddy Mobile PWA Primary ─── */
   --caddy-primary:            #52B788;   /* 연한 녹색 — 하단 네비, 강조 */
