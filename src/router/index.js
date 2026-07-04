@@ -35,7 +35,7 @@ router.beforeEach((to) => {
   // ── 1. 인증 불필요 화면 ──────────────────────────────────────────────────
   if (!to.meta.requiresAuth) {
     // 이미 로그인된 사용자가 로그인/회원가입 페이지에 오면 역할 홈으로 이동
-    const publicPaths = ['/', '/login', '/caddy/login', '/signup', '/signup/caddy', '/password-reset']
+    const publicPaths = ['/', '/login', '/admin/login', '/caddy/login', '/signup', '/signup/caddy', '/password-reset']
     if (authStore.isAuthenticated && publicPaths.includes(to.path)) {
       if (role === 'CADDY')    return '/caddy'
       if (role === 'MANAGER' || role === 'ADMIN') return '/admin/dashboard'

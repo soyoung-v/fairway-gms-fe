@@ -12,6 +12,13 @@ export default [
         component: () => import('@/views/auth/login/LoginView.vue'),
         meta: { requiresAuth: false, layout: 'auth', title: '로그인' },
       },
+      // Admin 전용 로그인 — Manager의 /login과 분리된 플랫폼 관리자 진입점
+      {
+        path: 'admin/login',
+        name: 'admin-login',
+        component: () => import('@/views/auth/login/LoginView.vue'),
+        meta: { requiresAuth: false, layout: 'auth', title: '관리자 로그인', adminLogin: true },
+      },
       // Caddy 전용 로그인 (UI-C001) — Manager/Admin의 /login과 분리된 PWA 진입점
       {
         path: 'caddy/login',

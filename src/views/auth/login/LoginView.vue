@@ -1,14 +1,19 @@
 <script setup>
 // 로그인 화면 (UI-M001) — Manager/Admin Web 전용. Caddy는 /caddy/login 사용
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+// route.meta.adminLogin=true(/admin/login)이면 Admin 전용 모드로 렌더링한다
+import { computed, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import authApi from '@/api/authApi'
 import BaseButton from '@/components/common/BaseButton.vue'
 import BaseInput from '@/components/common/BaseInput.vue'
 
+const route     = useRoute()
 const router    = useRouter()
 const authStore = useAuthStore()
+
+// Admin 전용 로그인 진입점 여부 — 문구/링크/역할 검증을 분기한다
+const isAdminLogin = computed(() => route.meta.adminLogin === true)
 
 const form = reactive({ email: '', password: '' })
 const loading  = ref(false)
@@ -29,6 +34,11 @@ async function handleLogin() {
   try {
     const res  = await authApi.login(form.email, form.password)
     const data = res.data?.data
+    // Admin 전용 로그인 화면에서는 ADMIN 계정만 허용한다
+    if (isAdminLogin.value && data.role !== 'ADMIN') {
+      errorMsg.value = '관리자 전용 로그인입니다. 일반 로그인을 이용해 주세요.'
+      return
+    }
     authStore.login(data)
     // PENDING/REJECTED 상태는 router beforeEach guard가 /pending으로 리디렉션한다
     router.push(roleHome(data.role))
@@ -59,7 +69,9 @@ function handleSocialLogin(provider) {
     <div class="login-card">
       <!-- 로고 -->
       <div class="login-card__logo">FairwayGMS</div>
-      <p class="login-card__subtitle">골프장 운영 관리 시스템</p>
+      <p class="login-card__subtitle">
+        {{ isAdminLogin ? '플랫폼 관리자 로그인' : '골프장 운영 관리 시스템' }}
+      </p>
 
       <!-- 로그인 폼 -->
       <form class="login-card__form" @submit.prevent="handleLogin">
@@ -98,8 +110,8 @@ function handleSocialLogin(provider) {
         </BaseButton>
       </form>
 
-      <!-- 소셜 로그인 -->
-      <div class="login-card__social">
+      <!-- 소셜 로그인 — Admin 로그인에서는 숨김 (Admin은 소셜/자가가입 없음) -->
+      <div v-if="!isAdminLogin" class="login-card__social">
         <span class="login-card__divider">소셜 로그인</span>
         <div class="login-card__social-btns">
           <button class="social-btn social-btn--kakao" type="button" @click="handleSocialLogin('kakao')">
@@ -114,10 +126,12 @@ function handleSocialLogin(provider) {
         </div>
       </div>
 
-      <!-- 하단 링크 — Manager/Admin 전용 -->
+      <!-- 하단 링크 — Admin 로그인에서는 회원가입 숨김 (Admin은 자가가입 없음) -->
       <div class="login-card__links">
-        <RouterLink to="/signup" class="login-card__link">Manager 회원가입</RouterLink>
-        <span class="login-card__link-sep">|</span>
+        <template v-if="!isAdminLogin">
+          <RouterLink to="/signup" class="login-card__link">Manager 회원가입</RouterLink>
+          <span class="login-card__link-sep">|</span>
+        </template>
         <RouterLink to="/password-reset" class="login-card__link">비밀번호 재설정</RouterLink>
       </div>
     </div>
