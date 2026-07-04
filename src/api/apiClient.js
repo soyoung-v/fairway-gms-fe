@@ -86,11 +86,16 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError)
         const authStore = useAuthStore()
+        // 로그아웃으로 role이 지워지기 전에 Admin 여부를 저장한다
+        const wasAdmin = authStore.isAdmin
         await authStore.logout()
         const router = await getRouter()
-        // 현재 경로가 /caddy 계열이면 캐디 로그인으로, 아니면 Manager 로그인으로 보낸다
+        // /caddy 계열 → 캐디 로그인, Admin → 관리자 로그인, 그 외 → Manager 로그인
         const currentPath = router.currentRoute?.value?.path || ''
-        router.push(currentPath.startsWith('/caddy') ? '/caddy/login' : '/login')
+        const loginPath = currentPath.startsWith('/caddy')
+          ? '/caddy/login'
+          : (wasAdmin ? '/admin/login' : '/login')
+        router.push(loginPath)
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false

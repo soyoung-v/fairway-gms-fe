@@ -176,9 +176,12 @@ function isMenuActive(targetPath) {
 }
 
 // ─── 로그아웃 ──────────────────────────────────────────────────────────────────
+// logout()이 로컬 상태를 비우기 전에 role을 저장해 두고, 정리 완료 후 역할별 로그인으로 이동한다
+// (await 없이 이동하면 아직 인증 상태로 판단돼 가드가 대시보드로 되돌려보낸다)
 async function handleLogout() {
-  authStore.logout()
-  router.push('/login')
+  const wasAdmin = authStore.isAdmin
+  await authStore.logout()
+  router.replace(wasAdmin ? '/admin/login' : '/login')
 }
 
 // ─── 사이드바 접기 ─────────────────────────────────────────────────────────────

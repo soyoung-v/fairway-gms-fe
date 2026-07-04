@@ -56,12 +56,6 @@ async function handleLogin() {
     loading.value = false
   }
 }
-
-// 소셜 로그인 — Spring Security OAuth2 인가 엔드포인트로 전체 이동
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
-function handleSocialLogin(provider) {
-  window.location.href = `${BASE_URL}/oauth2/authorization/${provider}`
-}
 </script>
 
 <template>
@@ -109,22 +103,6 @@ function handleSocialLogin(provider) {
           로그인
         </BaseButton>
       </form>
-
-      <!-- 소셜 로그인 — Admin 로그인에서는 숨김 (Admin은 소셜/자가가입 없음) -->
-      <div v-if="!isAdminLogin" class="login-card__social">
-        <span class="login-card__divider">소셜 로그인</span>
-        <div class="login-card__social-btns">
-          <button class="social-btn social-btn--kakao" type="button" @click="handleSocialLogin('kakao')">
-            카카오
-          </button>
-          <button class="social-btn social-btn--naver" type="button" @click="handleSocialLogin('naver')">
-            네이버
-          </button>
-          <button class="social-btn social-btn--google" type="button" @click="handleSocialLogin('google')">
-            Google
-          </button>
-        </div>
-      </div>
 
       <!-- 하단 링크 — Admin 로그인에서는 회원가입 숨김 (Admin은 자가가입 없음) -->
       <div class="login-card__links">
@@ -204,61 +182,6 @@ function handleSocialLogin(provider) {
 .login-card__submit {
   width: 100%;
   margin-top: var(--space-4);
-}
-
-/* ─── 소셜 로그인 ──────────── */
-.login-card__social {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-12);
-}
-
-.login-card__divider {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  font-size: var(--font-size-detail);
-  color: var(--color-text-secondary);
-}
-
-.login-card__divider::before,
-.login-card__divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--color-border);
-}
-
-.login-card__social-btns {
-  display: flex;
-  gap: var(--space-8);
-}
-
-.social-btn {
-  flex: 1;
-  padding: var(--space-8) var(--space-4);
-  font-size: var(--font-size-body-sm);
-  font-weight: 600;
-  border-radius: var(--radius-8);
-  transition: opacity var(--transition-fast);
-}
-
-.social-btn:hover { opacity: 0.85; }
-
-.social-btn--kakao {
-  background: #FEE500;
-  color: #3B1D1D;
-}
-
-.social-btn--naver {
-  background: #03C75A;
-  color: #fff;
-}
-
-.social-btn--google {
-  background: var(--color-bg-card);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
 }
 
 /* ─── 하단 링크 ──────────── */
