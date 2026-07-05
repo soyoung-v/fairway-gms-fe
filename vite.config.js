@@ -3,7 +3,6 @@ import { writeFileSync } from 'node:fs'
 
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
 
 // 서비스 워커는 Vite 번들러를 거치지 않아 import.meta.env 사용 불가
 // 빌드/개발 시작 시 .env 값을 읽어 public/firebase-messaging-sw.js 를 자동 생성한다
@@ -49,7 +48,6 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       vue(),
-      vueDevTools(),
       firebaseSwPlugin(env),
     ],
     resolve: {
