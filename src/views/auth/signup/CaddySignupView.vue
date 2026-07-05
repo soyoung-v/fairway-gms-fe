@@ -1,10 +1,23 @@
 <script setup>
 // Caddy 회원가입 화면 (UI-C013) — 모바일 우선 UX
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import authApi from '@/api/authApi'
+import golfCourseApi from '@/api/golfCourseApi'
 import BaseButton from '@/components/common/BaseButton.vue'
 import BaseInput from '@/components/common/BaseInput.vue'
+
+// 소속 골프장 선택 목록 — 비로그인 공개 API로 로드한다
+const golfCourses  = ref([])
+const coursesError = ref('')
+
+onMounted(async () => {
+  try {
+    golfCourses.value = await golfCourseApi.getPublicGolfCourses() ?? []
+  } catch {
+    coursesError.value = '골프장 목록을 불러오지 못했습니다.'
+  }
+})
 
 const step = ref('form') // 'form' | 'done'
 
@@ -37,7 +50,7 @@ function validate() {
   errors.email           = form.email.trim()       ? '' : '이메일을 입력해 주세요.'
   errors.password        = form.password.length >= 8 ? '' : '비밀번호는 8자 이상이어야 합니다.'
   errors.confirmPassword = form.password === form.confirmPassword ? '' : '비밀번호가 일치하지 않습니다.'
-  errors.golfCourseId    = form.golfCourseId.trim()  ? '' : '소속 골프장 ID를 입력해 주세요.'
+  errors.golfCourseId    = form.golfCourseId  ? '' : '소속 골프장을 선택해 주세요.'
 
   if (!emailCheckOk.value && !errors.email) {
     errors.email = '이메일 중복 확인이 필요합니다.'
@@ -197,17 +210,22 @@ async function handleSubmit() {
           />
         </div>
 
-        <!-- 소속 골프장 ID -->
+        <!-- 소속 골프장 선택 -->
         <div class="caddy-signup__field">
-          <label class="caddy-signup__label">소속 골프장 ID</label>
-          <BaseInput
+          <label class="caddy-signup__label">소속 골프장</label>
+          <select
             v-model="form.golfCourseId"
-            type="number"
-            placeholder="골프장 ID (숫자)"
-            :error="errors.golfCourseId"
-            :disabled="submitting"
-          />
-          <p class="caddy-signup__hint">소속 골프장 ID를 관리자에게 확인하세요.</p>
+            class="caddy-signup__select"
+            :class="{ 'is-error': errors.golfCourseId }"
+            :disabled="submitting || !golfCourses.length"
+          >
+            <option value="" disabled>골프장을 선택하세요</option>
+            <option v-for="gc in golfCourses" :key="gc.golfCourseId" :value="gc.golfCourseId">
+              {{ gc.name }}
+            </option>
+          </select>
+          <p v-if="errors.golfCourseId" class="caddy-signup__field-error">{{ errors.golfCourseId }}</p>
+          <p v-else-if="coursesError" class="caddy-signup__hint">{{ coursesError }}</p>
         </div>
 
         <p v-if="submitError" class="caddy-signup__submit-error" role="alert">
@@ -299,6 +317,27 @@ async function handleSubmit() {
 .caddy-signup__hint {
   font-size: var(--font-size-detail);
   color: var(--color-text-secondary);
+}
+
+.caddy-signup__select {
+  height: 48px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 var(--space-12);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-8);
+  font-size: var(--font-size-body-sm);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.caddy-signup__select:focus { border-color: var(--caddy-primary); }
+.caddy-signup__select.is-error { border-color: var(--color-danger); }
+
+.caddy-signup__field-error {
+  font-size: var(--font-size-detail);
+  color: var(--color-danger);
 }
 
 .caddy-signup__submit-error {

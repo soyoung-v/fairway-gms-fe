@@ -5,6 +5,11 @@ export function getGolfCourses() {
   return apiClient.get('/api/golf-course/golf-courses').then(res => res.data?.data)
 }
 
+// 비로그인 공개 골프장 목록 — 회원가입 골프장 선택 드롭다운용 (golfCourseId, name만 반환)
+export function getPublicGolfCourses() {
+  return apiClient.get('/api/public/golf-courses').then(res => res.data?.data)
+}
+
 // 골프장 등록 (Admin 전용)
 export function createGolfCourse(payload) {
   return apiClient.post('/api/golf-course/golf-courses', payload).then(res => res.data?.data)
@@ -17,6 +22,7 @@ export function updateGolfCourse(golfCourseId, payload) {
 
 export default {
   getGolfCourses,
+  getPublicGolfCourses,
   createGolfCourse,
   updateGolfCourse,
 }
