@@ -20,11 +20,12 @@ export default [
         meta: { requiresAuth: false, layout: 'auth', title: '관리자 로그인', adminLogin: true },
       },
       // Caddy 전용 로그인 (UI-C001) — Manager/Admin의 /login과 분리된 PWA 진입점
+      // authFull: AuthLayout 중앙정렬·배경 없이 자체 풀스크린으로 렌더링한다
       {
         path: 'caddy/login',
         name: 'caddy-login',
         component: () => import('@/views/auth/login/CaddyLoginView.vue'),
-        meta: { requiresAuth: false, layout: 'auth', title: '캐디 로그인' },
+        meta: { requiresAuth: false, layout: 'auth', title: '캐디 로그인', authFull: true },
       },
       {
         path: 'signup',

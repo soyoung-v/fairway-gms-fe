@@ -106,20 +106,15 @@ function handleSocialLogin(provider) {
           </BaseButton>
         </form>
 
-        <!-- 소셜 로그인 -->
+        <!-- 소셜 로그인 — 카카오만 제공 -->
         <div class="caddy-login__social">
-          <span class="caddy-login__divider">소셜 로그인</span>
-          <div class="caddy-login__social-btns">
-            <button class="social-btn social-btn--kakao" type="button" @click="handleSocialLogin('kakao')">
-              카카오
-            </button>
-            <button class="social-btn social-btn--naver" type="button" @click="handleSocialLogin('naver')">
-              네이버
-            </button>
-            <button class="social-btn social-btn--google" type="button" @click="handleSocialLogin('google')">
-              Google
-            </button>
-          </div>
+          <span class="caddy-login__divider">간편 로그인</span>
+          <button class="social-btn social-btn--kakao" type="button" @click="handleSocialLogin('kakao')">
+            <svg viewBox="0 0 24 24" class="social-btn__icon" fill="#3C1E1E" aria-hidden="true">
+              <path d="M12 3C6.48 3 2 6.48 2 10.8c0 2.74 1.64 5.16 4.14 6.6L5.2 21l4.54-2.4c.73.1 1.48.16 2.26.16 5.52 0 10-3.48 10-7.76S17.52 3 12 3z"/>
+            </svg>
+            카카오로 로그인
+          </button>
         </div>
 
         <!-- 하단 링크 -->
@@ -249,29 +244,24 @@ function handleSocialLogin(provider) {
   background: var(--color-border);
 }
 
-.caddy-login__social-btns {
-  display: flex;
-  gap: var(--space-8);
-}
-
 .social-btn {
-  flex: 1;
-  padding: var(--space-8) var(--space-4);
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
   font-size: var(--font-size-body-sm);
-  font-weight: 600;
+  font-weight: 700;
   border-radius: var(--radius-8);
   transition: opacity var(--transition-fast);
 }
 
-.social-btn:hover { opacity: 0.85; }
+.social-btn:hover { opacity: 0.9; }
+
+.social-btn__icon { width: 20px; height: 20px; }
 
 .social-btn--kakao { background: #FEE500; color: #3B1D1D; }
-.social-btn--naver { background: #03C75A; color: #fff; }
-.social-btn--google {
-  background: var(--color-bg-card);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-}
 
 .caddy-login__links {
   display: flex;
