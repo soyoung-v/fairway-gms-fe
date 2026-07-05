@@ -56,42 +56,42 @@ export default [
       {
         path: 'daily-status',
         component: () => import('@/views/manager/daily-status/DailyStatusView.vue'),
-        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '일일 운영 현황', uiId: 'UI-M010' },
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'manager', title: '일일 운영 현황', uiId: 'UI-M010' },
       },
       {
         path: 'queues',
         component: () => import('@/views/manager/queue/QueueManageView.vue'),
-        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '대기 순번 관리', uiId: 'UI-M009' },
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'manager', title: '대기 순번 관리', uiId: 'UI-M009' },
       },
       {
         path: 'operation/settings',
         component: () => import('@/views/manager/operation/OperationSettingView.vue'),
-        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '운영 설정', uiId: 'UI-M011' },
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'manager', title: '운영 설정', uiId: 'UI-M011' },
       },
       {
         path: 'operation/tee-times',
         component: () => import('@/views/manager/operation/TeeTimeView.vue'),
-        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '티타임 관리', uiId: 'UI-M012' },
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'manager', title: '티타임 관리', uiId: 'UI-M012' },
       },
       {
         path: 'operation/reservation-teams',
         component: () => import('@/views/manager/operation/ReservationTeamView.vue'),
-        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '예약팀 조회', uiId: 'UI-M013' },
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'manager', title: '예약팀 조회', uiId: 'UI-M013' },
       },
       {
         path: 'assignment',
         component: () => import('@/views/manager/assignment/AssignmentView.vue'),
-        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '캐디 배정', uiId: 'UI-M014' },
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'manager', title: '캐디 배정', uiId: 'UI-M014' },
       },
       {
         path: 'assignment/carts',
         component: () => import('@/views/manager/assignment/CartAssignmentView.vue'),
-        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '카트 배정', uiId: 'UI-M016' },
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'manager', title: '카트 배정', uiId: 'UI-M016' },
       },
       {
         path: 'assignment/by-course',
         component: () => import('@/views/manager/assignment/CourseAssignmentView.vue'),
-        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '코스별 배정표', uiId: 'UI-M017' },
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'manager', title: '코스별 배정표', uiId: 'UI-M017' },
       },
       {
         path: 'caddie-approvals',
@@ -101,27 +101,27 @@ export default [
       {
         path: 'settlement/fee-policy',
         component: () => import('@/views/manager/settlement/FeePolicyView.vue'),
-        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '캐디피 정책', uiId: 'UI-M018' },
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'manager', title: '캐디피 정책', uiId: 'UI-M018' },
       },
       {
         path: 'settlement/monthly',
         component: () => import('@/views/manager/settlement/MonthlySettlementView.vue'),
-        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '월별 정산', uiId: 'UI-M019' },
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'manager', title: '월별 정산', uiId: 'UI-M019' },
       },
       {
         path: 'settlement/export',
         component: () => import('@/views/manager/settlement/SettlementExportView.vue'),
-        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '정산 자료 내보내기', uiId: 'UI-M020' },
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'manager', title: '정산 자료 내보내기', uiId: 'UI-M020' },
       },
       {
         path: 'board',
         component: () => import('@/views/manager/board/BoardManageView.vue'),
-        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '게시판 관리', uiId: 'UI-M021' },
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'manager', title: '게시판 관리', uiId: 'UI-M021' },
       },
       {
         path: 'board/swap-requests',
         component: () => import('@/views/manager/board/SwapRequestManageView.vue'),
-        meta: { requiresAuth: true, roles: ['MANAGER'], layout: 'manager', title: '순번교환 관리', uiId: 'UI-M022' },
+        meta: { requiresAuth: true, roles: ['ADMIN', 'MANAGER'], layout: 'manager', title: '순번교환 관리', uiId: 'UI-M022' },
       },
 
       // ── Admin 전용 ──

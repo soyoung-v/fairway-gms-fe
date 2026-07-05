@@ -97,20 +97,20 @@ const menuDefinitions = [
   {
     label: 'OPERATION',
     items: [
-      { label: '일일 운영 현황', path: 'daily-status',         icon: 'calendar', roles: ['MANAGER'] },
-      { label: '대기 순번 관리', path: 'queues',               icon: 'list',     roles: ['MANAGER'] },
-      { label: '운영 설정',      path: 'operation/settings',   icon: 'settings', roles: ['MANAGER'] },
-      { label: '티타임 관리',    path: 'operation/tee-times',  icon: 'clock',    roles: ['MANAGER'] },
-      { label: '예약팀 조회',    path: 'operation/reservation-teams', icon: 'team', roles: ['MANAGER'] },
+      { label: '일일 운영 현황', path: 'daily-status',         icon: 'calendar', roles: ['ADMIN', 'MANAGER'] },
+      { label: '대기 순번 관리', path: 'queues',               icon: 'list',     roles: ['ADMIN', 'MANAGER'] },
+      { label: '운영 설정',      path: 'operation/settings',   icon: 'settings', roles: ['ADMIN', 'MANAGER'] },
+      { label: '티타임 관리',    path: 'operation/tee-times',  icon: 'clock',    roles: ['ADMIN', 'MANAGER'] },
+      { label: '예약팀 조회',    path: 'operation/reservation-teams', icon: 'team', roles: ['ADMIN', 'MANAGER'] },
     ],
   },
   {
     label: 'ASSIGNMENT',
     items: [
-      { label: '캐디 배정',      path: 'assignment',         icon: 'assign',   roles: ['MANAGER'] },
-      { label: '배정 이력',      path: 'assignment/history', icon: 'history',  roles: ['MANAGER'] },
-      { label: '카트 배정',      path: 'assignment/carts',      icon: 'cart',   roles: ['MANAGER'] },
-      { label: '코스별 배정표',  path: 'assignment/by-course',  icon: 'grid',   roles: ['MANAGER'] },
+      { label: '캐디 배정',      path: 'assignment',         icon: 'assign',   roles: ['ADMIN', 'MANAGER'] },
+      { label: '배정 이력',      path: 'assignment/history', icon: 'history',  roles: ['ADMIN', 'MANAGER'] },
+      { label: '카트 배정',      path: 'assignment/carts',      icon: 'cart',   roles: ['ADMIN', 'MANAGER'] },
+      { label: '코스별 배정표',  path: 'assignment/by-course',  icon: 'grid',   roles: ['ADMIN', 'MANAGER'] },
     ],
   },
   {
@@ -130,16 +130,16 @@ const menuDefinitions = [
   {
     label: 'SETTLEMENT',
     items: [
-      { label: '캐디피 정책',    path: 'settlement/fee-policy',  icon: 'money',   roles: ['MANAGER'] },
-      { label: '월별 정산',      path: 'settlement/monthly',      icon: 'sheet',   roles: ['MANAGER'] },
-      { label: '정산 자료 내보내기', path: 'settlement/export',   icon: 'download', roles: ['MANAGER'] },
+      { label: '캐디피 정책',    path: 'settlement/fee-policy',  icon: 'money',   roles: ['ADMIN', 'MANAGER'] },
+      { label: '월별 정산',      path: 'settlement/monthly',      icon: 'sheet',   roles: ['ADMIN', 'MANAGER'] },
+      { label: '정산 자료 내보내기', path: 'settlement/export',   icon: 'download', roles: ['ADMIN', 'MANAGER'] },
     ],
   },
   {
     label: 'BOARD',
     items: [
-      { label: '게시판 관리',    path: 'board',              icon: 'board',   roles: ['MANAGER'] },
-      { label: '순번교환 관리',  path: 'board/swap-requests', icon: 'swap',   roles: ['MANAGER'] },
+      { label: '게시판 관리',    path: 'board',              icon: 'board',   roles: ['ADMIN', 'MANAGER'] },
+      { label: '순번교환 관리',  path: 'board/swap-requests', icon: 'swap',   roles: ['ADMIN', 'MANAGER'] },
     ],
   },
   {
