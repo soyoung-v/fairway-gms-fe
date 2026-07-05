@@ -41,6 +41,14 @@ export function changePassword({ currentPassword, newPassword }) {
   return apiClient.patch('/api/auth/me/password', { currentPassword, newPassword }).then(res => res.data?.data)
 }
 
+// 소셜 최초 가입 완료 — 임시 oauth_signup 쿠키와 함께 role/골프장/추가정보를 전송한다
+// withCredentials(apiClient 기본)로 임시 쿠키가 반드시 함께 전송되어야 한다
+export function completeOAuthSignup({ role, golfCourseId, name, phone, email }) {
+  return apiClient
+    .post('/api/auth/oauth2/complete', { role, golfCourseId, name, phone, email })
+    .then(res => res.data?.data)
+}
+
 // 비밀번호 재설정 요청
 export function requestPasswordReset(email) {
   return apiClient.post('/api/auth/password-reset/request', { email })
@@ -59,6 +67,7 @@ export default {
   signup,
   signupManager,
   signupCaddy,
+  completeOAuthSignup,
   changePassword,
   requestPasswordReset,
   confirmPasswordReset,

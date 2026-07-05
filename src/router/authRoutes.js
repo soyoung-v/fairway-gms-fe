@@ -45,6 +45,14 @@ export default [
         component: () => import('@/views/auth/password/PasswordResetView.vue'),
         meta: { requiresAuth: false, layout: 'auth', title: '비밀번호 재설정' },
       },
+      // 소셜 로그인 콜백 — 백엔드가 status(login/signup/pending/error)로 리다이렉트한다
+      // authFull: 자체 풀스크린으로 렌더링
+      {
+        path: 'oauth/callback',
+        name: 'oauth-callback',
+        component: () => import('@/views/auth/login/OAuthCallbackView.vue'),
+        meta: { requiresAuth: false, layout: 'auth', title: '소셜 로그인', authFull: true },
+      },
       // 승인 대기 / 거절 안내 — 사이드바 없이 AuthLayout에서 렌더링한다
       {
         path: 'admin/pending',
