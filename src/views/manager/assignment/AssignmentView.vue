@@ -6,8 +6,9 @@ import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useGolfCourseStore } from '@/stores/useGolfCourseStore'
 import { useAssignmentStore } from '@/stores/useAssignmentStore'
-import { getOperationSetting } from '@/api/operationApi'
-import { getAvailableCaddies } from '@/api/caddieApi'
+import { getOperationSetting, getTeeTimes } from '@/api/operationApi'
+import { getAvailableCaddies, getCaddieGroups } from '@/api/caddieApi'
+import { bulkSessionAssign } from '@/api/assignmentApi'
 import BaseBadge from '@/components/common/BaseBadge.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import BaseLoading from '@/components/common/BaseLoading.vue'
@@ -136,6 +137,10 @@ const periodOptions    = computed(() => periods.value.map(p => ({
   label: `${p.periodNumber}부 — ${p.courseName} (${p.startTime} ~ ${p.endTime})`,
 })))
 
+// 자동배정 대상 그룹 — SESSION_FIXED 제외, 체크된 그룹만 우선순위 순으로 전달 (ADR-005)
+const autoGroups        = ref([])
+const selectedGroupIds  = ref([])
+
 async function openAutoAssignModal() {
   autoAssignError.value  = ''
   selectedPeriodId.value = null
@@ -150,6 +155,18 @@ async function openAutoAssignModal() {
   } catch {
     autoAssignError.value = '운영 설정을 불러오지 못했습니다. 먼저 운영 설정을 등록해 주세요.'
   }
+
+  try {
+    const groups = await getCaddieGroups() ?? []
+    // 우선배정 그룹이 배정 순서 앞에 오도록 정렬
+    autoGroups.value = groups
+      .filter(g => g.assignmentType !== 'SESSION_FIXED')
+      .sort((a, b) => (a.assignmentType === 'PRIORITY_FIRST' ? -1 : 1) - (b.assignmentType === 'PRIORITY_FIRST' ? -1 : 1))
+    selectedGroupIds.value = autoGroups.value.map(g => g.groupId)
+  } catch {
+    autoGroups.value       = []
+    selectedGroupIds.value = []
+  }
 }
 
 async function handleAutoAssign() {
@@ -157,9 +174,14 @@ async function handleAutoAssign() {
   autoAssigning.value = true
   autoAssignError.value = ''
   try {
+    // 우선순위 순서 유지 — autoGroups 정렬 순서대로 선택된 그룹만 전달
+    const groupIds = autoGroups.value
+      .filter(g => selectedGroupIds.value.includes(g.groupId))
+      .map(g => g.groupId)
     const result = await assignmentStore.runAutoAssign({
       assignmentDate: selectedDate.value,
       periodId: selectedPeriodId.value,
+      groupIds,
     })
     showAutoAssign.value = false
     await fetchData() // 배정 결과 반영
@@ -169,6 +191,67 @@ async function handleAutoAssign() {
     autoAssignError.value = code === 'INVALID_PARAMETER' ? '유효하지 않은 배정 요청입니다.' : '자동배정에 실패했습니다.'
   } finally {
     autoAssigning.value = false
+  }
+}
+
+// ─── 그룹 일괄 배정 모달 (SESSION_FIXED, API-523) ────────────────
+// 시작 티타임부터 그룹 캐디를 순서대로 배정 — 주중2부반/3부전담반 수동 배치용
+const showBulkSession       = ref(false)
+const bulkAssigning         = ref(false)
+const bulkError             = ref('')
+const sessionGroups         = ref([])
+const bulkGroupId           = ref(null)
+const bulkTeeTimes          = ref([])
+const bulkStartTeeTimeId    = ref(null)
+
+const sessionGroupOptions = computed(() => sessionGroups.value.map(g => ({
+  value: g.groupId,
+  label: `${g.name} (${g.caddieCount}명)`,
+})))
+const bulkTeeTimeOptions = computed(() => bulkTeeTimes.value.map(t => ({
+  value: t.teeTimeId,
+  label: `[${t.periodNumber}부] ${t.startTime?.slice(0, 5)} — ${t.courseName}`,
+})))
+
+async function openBulkSessionModal() {
+  bulkError.value          = ''
+  bulkGroupId.value        = null
+  bulkStartTeeTimeId.value = null
+  showBulkSession.value    = true
+
+  try {
+    const [groups, teeTimes] = await Promise.all([
+      getCaddieGroups(),
+      getTeeTimes({ playDate: selectedDate.value }),
+    ])
+    sessionGroups.value = (groups ?? []).filter(g => g.assignmentType === 'SESSION_FIXED')
+    bulkTeeTimes.value  = (teeTimes ?? []).filter(t => t.status === 'OPEN')
+    if (!sessionGroups.value.length) {
+      bulkError.value = '세션고정 그룹이 없습니다. 캐디 그룹 관리에서 먼저 등록해 주세요.'
+    }
+  } catch {
+    bulkError.value = '그룹/티타임 정보를 불러오지 못했습니다.'
+  }
+}
+
+async function handleBulkSession() {
+  if (!bulkGroupId.value)        { bulkError.value = '그룹을 선택해 주세요.'; return }
+  if (!bulkStartTeeTimeId.value) { bulkError.value = '시작 티타임을 선택해 주세요.'; return }
+  bulkAssigning.value = true
+  bulkError.value     = ''
+  try {
+    const result = await bulkSessionAssign({
+      assignmentDate: selectedDate.value,
+      startTeeTimeId: bulkStartTeeTimeId.value,
+      caddieGroupId:  bulkGroupId.value,
+    })
+    showBulkSession.value = false
+    await fetchData()
+    alert(`그룹 일괄 배정 완료 — ${result?.length ?? 0}팀 배정`)
+  } catch {
+    bulkError.value = '그룹 일괄 배정에 실패했습니다.'
+  } finally {
+    bulkAssigning.value = false
   }
 }
 
@@ -393,6 +476,9 @@ async function handleComplete(a) {
         <BaseButton variant="secondary" size="sm" @click="openAutoAssignModal" :disabled="!targetGolfCourseId">
           자동배정
         </BaseButton>
+        <BaseButton variant="secondary" size="sm" @click="openBulkSessionModal" :disabled="!targetGolfCourseId">
+          그룹 일괄 배정
+        </BaseButton>
         <BaseButton variant="primary" size="sm" @click="openManualModal" :disabled="!targetGolfCourseId">
           수동배정
         </BaseButton>
@@ -548,12 +634,53 @@ async function handleComplete(a) {
             :disabled="autoAssigning || !periodOptions.length"
           />
         </div>
+        <div v-if="autoGroups.length" class="form-row">
+          <label class="form-label">대상 그룹 (우선배정 → 하우스 순)</label>
+          <div class="group-checks">
+            <label v-for="g in autoGroups" :key="g.groupId" class="group-check">
+              <input type="checkbox" v-model="selectedGroupIds" :value="g.groupId" :disabled="autoAssigning" />
+              <span>{{ g.name }} ({{ g.caddieCount }}명)</span>
+            </label>
+          </div>
+        </div>
         <p v-if="autoAssignError" class="form-error">{{ autoAssignError }}</p>
       </div>
       <template #footer>
         <BaseButton variant="ghost" :disabled="autoAssigning" @click="showAutoAssign = false">취소</BaseButton>
         <BaseButton variant="primary" :loading="autoAssigning" :disabled="!periodOptions.length" @click="handleAutoAssign">
           배정 실행
+        </BaseButton>
+      </template>
+    </BaseModal>
+
+    <!-- 그룹 일괄 배정 모달 (SESSION_FIXED) -->
+    <BaseModal :visible="showBulkSession" title="그룹 일괄 배정" subtitle="세션고정 그룹을 시작 티타임부터 순서대로 배정합니다" @close="showBulkSession = false">
+      <div class="form">
+        <p class="form-desc">배정일: <strong>{{ selectedDate }}</strong></p>
+        <div class="form-row">
+          <label class="form-label">세션고정 그룹 <span class="required">*</span></label>
+          <BaseSelect
+            v-model="bulkGroupId"
+            :options="sessionGroupOptions"
+            placeholder="그룹을 선택해 주세요"
+            :disabled="bulkAssigning || !sessionGroupOptions.length"
+          />
+        </div>
+        <div class="form-row">
+          <label class="form-label">시작 티타임 <span class="required">*</span></label>
+          <BaseSelect
+            v-model="bulkStartTeeTimeId"
+            :options="bulkTeeTimeOptions"
+            placeholder="시작 티타임을 선택해 주세요"
+            :disabled="bulkAssigning || !bulkTeeTimeOptions.length"
+          />
+        </div>
+        <p v-if="bulkError" class="form-error">{{ bulkError }}</p>
+      </div>
+      <template #footer>
+        <BaseButton variant="ghost" :disabled="bulkAssigning" @click="showBulkSession = false">취소</BaseButton>
+        <BaseButton variant="primary" :loading="bulkAssigning" :disabled="!sessionGroupOptions.length" @click="handleBulkSession">
+          일괄 배정 실행
         </BaseButton>
       </template>
     </BaseModal>
@@ -919,6 +1046,25 @@ async function handleComplete(a) {
 .form-error {
   font-size: var(--font-size-detail);
   color: var(--color-danger);
+}
+
+.group-checks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-8) var(--space-12);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-6);
+  background: var(--color-bg-input);
+}
+
+.group-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  font-size: var(--font-size-body-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
 }
 
 .required { color: var(--color-danger); }
