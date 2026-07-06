@@ -4,6 +4,7 @@ import { onMounted, reactive, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useCaddyStore } from '@/stores/useCaddyStore'
+import { getCaddieGroups, assignCaddieGroup } from '@/api/caddieApi'
 import BaseButton from '@/components/common/BaseButton.vue'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseBadge from '@/components/common/BaseBadge.vue'
@@ -104,12 +105,34 @@ async function handleRegister() {
   }
 }
 
+// ─── 캐디 그룹 (ADR-005) — Manager 전용 인라인 지정 ─────────────────
+const groups = ref([])
+
+async function loadGroups() {
+  if (!isManager.value) return // 그룹 API는 MANAGER 전용
+  try {
+    groups.value = await getCaddieGroups() ?? []
+  } catch { }
+}
+
+async function handleGroupChange(caddie, event) {
+  const value = event.target.value
+  const groupId = value ? Number(value) : null
+  try {
+    await assignCaddieGroup(caddie.id, groupId)
+    await caddyStore.fetchCaddies()
+  } catch {
+    alert('그룹 변경에 실패했습니다.')
+    event.target.value = caddie.caddieGroupId ?? ''
+  }
+}
+
 // ─── 상세 이동 ─────────────────────────────────────────────────────
 function goToDetail(caddie) {
   router.push(`/admin/caddies/${caddie.id}`)
 }
 
-onMounted(() => caddyStore.fetchCaddies())
+onMounted(() => Promise.all([caddyStore.fetchCaddies(), loadGroups()]))
 </script>
 
 <template>
@@ -156,6 +179,7 @@ onMounted(() => caddyStore.fetchCaddies())
             <th>이름</th>
             <th>연락처</th>
             <th>입사일</th>
+            <th>그룹</th>
             <th>상태</th>
           </tr>
         </thead>
@@ -170,6 +194,18 @@ onMounted(() => caddyStore.fetchCaddies())
             <td class="caddie-table__name">{{ caddie.name }}</td>
             <td>{{ caddie.phone || '—' }}</td>
             <td>{{ caddie.hireDate || '—' }}</td>
+            <td @click.stop>
+              <select
+                v-if="isManager"
+                class="group-select"
+                :value="caddie.caddieGroupId ?? ''"
+                @change="handleGroupChange(caddie, $event)"
+              >
+                <option value="">하우스 (기본)</option>
+                <option v-for="g in groups" :key="g.groupId" :value="g.groupId">{{ g.name }}</option>
+              </select>
+              <span v-else>{{ caddie.caddieGroupName || '하우스 (기본)' }}</span>
+            </td>
             <td>
               <BaseBadge :type="getBadge(caddie.status).type">
                 {{ getBadge(caddie.status).label }}
@@ -184,7 +220,7 @@ onMounted(() => caddyStore.fetchCaddies())
     <BaseEmpty v-else message="등록된 캐디가 없습니다." />
 
     <!-- 캐디 등록 모달 -->
-    <BaseModal v-if="showRegister" title="캐디 등록" @close="showRegister = false">
+    <BaseModal :visible="showRegister" title="캐디 등록" hide-footer @close="showRegister = false">
       <form class="modal-form" @submit.prevent="handleRegister">
         <div class="modal-form__field">
           <label class="modal-form__label">캐디 번호 <span class="required">*</span></label>
@@ -335,6 +371,21 @@ onMounted(() => caddyStore.fetchCaddies())
 }
 
 .caddie-table__name { font-weight: 500; }
+
+.group-select {
+  padding: var(--space-4) var(--space-8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-6);
+  font-size: var(--font-size-body-sm);
+  color: var(--color-text-primary);
+  background: var(--color-bg-input);
+  cursor: pointer;
+}
+
+.group-select:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+}
 
 /* ─── 등록 모달 ─── */
 .modal-form {

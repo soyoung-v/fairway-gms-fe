@@ -47,6 +47,11 @@ export default [
         meta: { ...managerMeta, title: '캐디 상세', uiId: 'UI-M008' },
       },
       {
+        path: 'caddie-groups',
+        component: () => import('@/views/manager/caddy/CaddieGroupView.vue'),
+        meta: { ...managerMeta, title: '캐디 그룹 관리', uiId: 'UI-M007G' },
+      },
+      {
         path: 'assignment/history',
         component: () => import('@/views/manager/assignment/AssignmentHistoryView.vue'),
         meta: { ...managerMeta, title: '배정 이력', uiId: 'UI-M015' },

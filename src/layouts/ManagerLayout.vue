@@ -124,6 +124,7 @@ const menuDefinitions = [
     label: 'CADDY',
     items: [
       { label: '캐디 목록',        path: 'caddies',            icon: 'person' },
+      { label: '캐디 그룹 관리',   path: 'caddie-groups',      icon: 'list',     roles: ['MANAGER'] },
       { label: '캐디 가입 승인',   path: 'caddie-approvals',   icon: 'check',    roles: ['MANAGER'] },
     ],
   },
