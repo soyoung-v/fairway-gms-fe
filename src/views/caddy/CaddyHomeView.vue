@@ -1,14 +1,12 @@
 <script setup>
 // 내 배정 홈 (UI-C002) — Caddy 전용
-// 오늘/내일 내 배정 목록 조회 (schedules/daily 전체 중 caddieId 필터), 미읽음 알림 배지
-// 백엔드 /api/assignment/me 미구현 → /api/assignment/schedules/daily + caddieId 클라이언트 필터
+// 오늘/내일 내 배정 목록 조회 (API-518 /api/assignment/me — CONFIRMED/COMPLETED만 노출), 미읽음 알림 배지
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useNotificationStore } from '@/stores/useNotificationStore'
-import caddieApi from '@/api/caddieApi'
-import { getDailyAssignments } from '@/api/assignmentApi'
+import { getMyAssignments } from '@/api/assignmentApi'
 import BaseLoading from '@/components/common/BaseLoading.vue'
 
 const router = useRouter()
@@ -34,7 +32,6 @@ const tomorrowStr = toDateStr(tomorrowDate)
 const activeTab    = ref('today')
 const selectedDate = computed(() => activeTab.value === 'today' ? todayStr : tomorrowStr)
 
-const myCaddieId  = ref(null)
 const assignments = ref([])
 const loading     = ref(false)
 const error       = ref('')
@@ -53,12 +50,10 @@ const STATUS_CLASS = {
 }
 
 async function loadAssignments() {
-  if (!myCaddieId.value) return
   loading.value = true
   error.value   = ''
   try {
-    const list = await getDailyAssignments({ assignmentDate: selectedDate.value })
-    assignments.value = (list ?? []).filter(a => a.caddieId === myCaddieId.value)
+    assignments.value = await getMyAssignments(selectedDate.value) ?? []
   } catch {
     error.value = '배정 정보를 불러오지 못했습니다.'
   } finally {
@@ -67,10 +62,6 @@ async function loadAssignments() {
 }
 
 onMounted(async () => {
-  try {
-    const me = await caddieApi.getMyInfo()
-    myCaddieId.value = me?.caddieId
-  } catch { }
   await Promise.all([
     loadAssignments(),
     notificationStore.fetchUnreadCount(),
@@ -119,9 +110,9 @@ onMounted(async () => {
         <p>{{ activeTab === 'today' ? '오늘' : '내일' }} 배정이 없습니다.</p>
       </div>
 
-      <div v-for="a in assignments" :key="a.id"
+      <div v-for="a in assignments" :key="a.assignmentId"
         class="assignment-card"
-        @click="router.push(`/caddy/assignment/${a.id}`)">
+        @click="router.push(`/caddy/assignment/${a.assignmentId}`)">
         <div class="card-header">
           <span class="team-name">{{ a.teamName }}</span>
           <span class="badge" :class="STATUS_CLASS[a.status]">{{ STATUS_LABEL[a.status] ?? a.status }}</span>

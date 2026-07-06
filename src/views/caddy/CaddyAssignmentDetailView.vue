@@ -1,11 +1,9 @@
 <script setup>
 // 배정 상세 (UI-C003) — Caddy 전용
-// 백엔드 /api/assignment/me/{assignmentId} 미구현
-// → schedules/daily 전체 조회 후 assignmentId 매칭으로 상세 표시
+// API-519 /api/assignment/me/{assignmentId} — 팀 명단/카트/메모 포함 상세
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import caddieApi from '@/api/caddieApi'
-import { getDailyAssignments } from '@/api/assignmentApi'
+import { getMyAssignmentDetail } from '@/api/assignmentApi'
 import BaseLoading from '@/components/common/BaseLoading.vue'
 
 const route  = useRoute()
@@ -30,32 +28,12 @@ const STATUS_CLASS = {
   CANCELLED:   'badge--muted',
 }
 
-function toDateStr(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
 onMounted(async () => {
   loading.value = true
   error.value   = ''
   try {
-    const me   = await caddieApi.getMyInfo()
-    const today = toDateStr(new Date())
-    // 오늘 배정 목록에서 해당 배정 탐색
-    const list = await getDailyAssignments({ assignmentDate: today })
-    let found = (list ?? []).find(a => a.id === assignmentId)
-
-    // 오늘에 없으면 내일도 시도
-    if (!found) {
-      const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1)
-      const list2 = await getDailyAssignments({ assignmentDate: toDateStr(tomorrow) })
-      found = (list2 ?? []).find(a => a.id === assignmentId)
-    }
-
-    if (found) {
-      assignment.value = found
-    } else {
-      error.value = '배정 정보를 찾을 수 없습니다.'
-    }
+    assignment.value = await getMyAssignmentDetail(assignmentId)
+    if (!assignment.value) error.value = '배정 정보를 찾을 수 없습니다.'
   } catch {
     error.value = '배정 정보를 불러오지 못했습니다.'
   } finally {
@@ -103,18 +81,27 @@ onMounted(async () => {
             <span class="detail-label">배정일</span>
             <span class="detail-value">{{ assignment.assignmentDate ?? '—' }}</span>
           </div>
-          <div v-if="assignment.isLocked" class="detail-row">
-            <span class="detail-label">유형</span>
-            <span class="detail-value tag-badge">지정 캐디</span>
+          <div class="detail-row">
+            <span class="detail-label">인원</span>
+            <span class="detail-value">{{ assignment.playerCount != null ? `${assignment.playerCount}명` : '—' }}</span>
           </div>
-          <div v-if="assignment.isHalfBack" class="detail-row">
-            <span class="detail-label">하프백</span>
-            <span class="detail-value tag-badge">하프백</span>
+          <div class="detail-row">
+            <span class="detail-label">카트</span>
+            <span class="detail-value">{{ assignment.cartNumber ?? '미배정' }}</span>
+          </div>
+          <div v-if="assignment.playerNames" class="detail-row">
+            <span class="detail-label">명단</span>
+            <span class="detail-value">{{ assignment.playerNames }}</span>
+          </div>
+          <div v-if="assignment.memo" class="detail-row">
+            <span class="detail-label">메모</span>
+            <span class="detail-value">{{ assignment.memo }}</span>
+          </div>
+          <div v-if="assignment.isVip" class="detail-row">
+            <span class="detail-label">유형</span>
+            <span class="detail-value tag-badge">VIP</span>
           </div>
         </div>
-
-        <!-- 상세 정보 미지원 안내 (playerNames, cartNumber, memo는 전용 API 미구현) -->
-        <p class="gap-notice">플레이어 명단, 카트 번호, 메모 등 상세 정보는 추후 제공 예정입니다.</p>
       </div>
     </template>
   </div>

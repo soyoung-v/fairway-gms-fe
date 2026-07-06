@@ -133,6 +133,27 @@ export function cancelCartAssignment(cartAssignmentId) {
   return apiClient.delete(`/api/assignment/carts/${cartAssignmentId}`).then(res => res.data?.data)
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 캐디 모바일 (CADDY 전용) — /api/assignment/me
+// ─────────────────────────────────────────────────────────────────────────────
+
+// 내 배정 목록 조회 — CONFIRMED/COMPLETED만 노출 (API-518)
+// 응답: [{ assignmentId, teamName, playerCount, courseId, courseName, assignmentDate, teeTime, cartNumber, status, isHalfBack }]
+export function getMyAssignments(targetDate) {
+  const params = targetDate ? { targetDate } : {}
+  return apiClient.get('/api/assignment/me', { params }).then(res => res.data?.data)
+}
+
+// 내 배정 상세 조회 — 팀 명단/메모 포함 (API-519)
+export function getMyAssignmentDetail(assignmentId) {
+  return apiClient.get(`/api/assignment/me/${assignmentId}`).then(res => res.data?.data)
+}
+
+// SESSION_FIXED 그룹 일괄 수동 배정 — 시작 티타임부터 그룹 캐디를 순서대로 배정 (API-523)
+export function bulkSessionAssign({ assignmentDate, startTeeTimeId, caddieGroupId }) {
+  return apiClient.post('/api/assignment/bulk-session', { assignmentDate, startTeeTimeId, caddieGroupId }).then(res => res.data?.data)
+}
+
 export default {
   getDailyAssignments,
   getAssignmentsByCourse,
@@ -156,4 +177,7 @@ export default {
   changeCart,
   returnCartAssignment,
   cancelCartAssignment,
+  getMyAssignments,
+  getMyAssignmentDetail,
+  bulkSessionAssign,
 }

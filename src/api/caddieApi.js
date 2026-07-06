@@ -134,6 +134,43 @@ export function getMyQueue(queueDate) {
   return apiClient.get('/api/caddie/me/queue', { params }).then(res => res.data?.data)
 }
 
+// 내 운영 시간표 조회 — 부별 시작/종료시간 + 코스명 (API-320)
+// 응답: [{ periodNumber, startTime, endTime, courseName }]
+export function getMySchedule(targetDate) {
+  const params = targetDate ? { targetDate } : {}
+  return apiClient.get('/api/caddie/me/schedule', { params }).then(res => res.data?.data)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 캐디 그룹 (Manager) — /api/caddie/groups (ADR-005)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// 그룹 목록 조회 — 첫 조회 시 "하우스캐디" 기본 그룹 자동 생성 (API-321)
+// 응답: [{ groupId, name, assignmentType, assignmentTypeLabel, caddieCount }]
+export function getCaddieGroups() {
+  return apiClient.get('/api/caddie/groups').then(res => res.data?.data)
+}
+
+// 그룹 등록 — assignmentType: HOUSE | PRIORITY_FIRST | SESSION_FIXED (API-322)
+export function createCaddieGroup({ name, assignmentType }) {
+  return apiClient.post('/api/caddie/groups', { name, assignmentType }).then(res => res.data?.data)
+}
+
+// 그룹 수정 (API-323)
+export function updateCaddieGroup(groupId, { name, assignmentType }) {
+  return apiClient.patch(`/api/caddie/groups/${groupId}`, { name, assignmentType }).then(res => res.data?.data)
+}
+
+// 그룹 삭제 — 소속 캐디가 있으면 409 CADDIE_GROUP_HAS_CADDIES (API-324)
+export function deleteCaddieGroup(groupId) {
+  return apiClient.delete(`/api/caddie/groups/${groupId}`).then(res => res.data?.data)
+}
+
+// 캐디 그룹 지정/해제 — groupId=null이면 해제(자동배정 시 하우스 취급) (API-325)
+export function assignCaddieGroup(caddieId, groupId) {
+  return apiClient.patch(`/api/caddie/caddies/${caddieId}/group`, { groupId }).then(res => res.data?.data)
+}
+
 export default {
   // 캐디 관리
   getCaddies,
@@ -161,4 +198,11 @@ export default {
   // 캐디 모바일
   getMyInfo,
   getMyQueue,
+  getMySchedule,
+  // 캐디 그룹
+  getCaddieGroups,
+  createCaddieGroup,
+  updateCaddieGroup,
+  deleteCaddieGroup,
+  assignCaddieGroup,
 }

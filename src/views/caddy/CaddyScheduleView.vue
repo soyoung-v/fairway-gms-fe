@@ -1,11 +1,8 @@
 <script setup>
 // 운영 시간표 (UI-C005) — Caddy 전용
-// 백엔드 GET /api/caddie/me/schedule 미구현 (CaddieMobileController에 없음)
-// → 구현될 때 periodNumber, startTime, endTime, courseName 표시 예정
-// 현재는 schedules/daily를 통해 내 배정 코스 정보를 시간표 형태로 보여준다
+// API-320 GET /api/caddie/me/schedule — 부별 운영 시작/종료 시간 + 코스명
 import { onMounted, ref } from 'vue'
-import caddieApi from '@/api/caddieApi'
-import { getDailyAssignments } from '@/api/assignmentApi'
+import { getMySchedule } from '@/api/caddieApi'
 import BaseLoading from '@/components/common/BaseLoading.vue'
 
 function toDateStr(d) {
@@ -18,24 +15,19 @@ const selectedDate = ref(toDateStr(today))
 const scheduleRows = ref([])
 const loading      = ref(false)
 const error        = ref('')
-const myCaddieId   = ref(null)
 
 async function loadSchedule() {
-  if (!myCaddieId.value) return
   loading.value = true
   error.value   = ''
   try {
-    // /api/caddie/me/schedule 미구현 — 일일 배정에서 내 코스/시간 정보를 대체 표시
-    const list = await getDailyAssignments({ assignmentDate: selectedDate.value })
+    const list = await getMySchedule(selectedDate.value)
     scheduleRows.value = (list ?? [])
-      .filter(a => a.caddieId === myCaddieId.value)
-      .map(a => ({
-        teeTime:    a.teeTime?.slice(0, 5) ?? '—',
-        courseName: a.courseName ?? '—',
-        teamName:   a.teamName  ?? '—',
-        status:     a.status,
+      .map(p => ({
+        periodNumber: p.periodNumber,
+        timeRange:    `${p.startTime?.slice(0, 5) ?? '—'} ~ ${p.endTime?.slice(0, 5) ?? '—'}`,
+        courseName:   p.courseName ?? '—',
       }))
-      .sort((a, b) => a.teeTime.localeCompare(b.teeTime))
+      .sort((a, b) => (a.periodNumber ?? 0) - (b.periodNumber ?? 0) || a.courseName.localeCompare(b.courseName))
   } catch {
     error.value = '시간표를 불러오지 못했습니다.'
   } finally {
@@ -43,13 +35,7 @@ async function loadSchedule() {
   }
 }
 
-onMounted(async () => {
-  try {
-    const me = await caddieApi.getMyInfo()
-    myCaddieId.value = me?.caddieId
-  } catch { }
-  await loadSchedule()
-})
+onMounted(loadSchedule)
 </script>
 
 <template>
@@ -59,15 +45,6 @@ onMounted(async () => {
     <!-- 날짜 선택 -->
     <div class="date-row">
       <input type="date" v-model="selectedDate" class="date-input" @change="loadSchedule" />
-    </div>
-
-    <!-- 백엔드 미구현 안내 -->
-    <div class="gap-notice">
-      <svg class="notice-icon" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
-        <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-      </svg>
-      <span>공식 시간표 API 구현 전까지 내 배정 기반으로 표시됩니다.</span>
     </div>
 
     <BaseLoading v-if="loading" />
@@ -81,11 +58,11 @@ onMounted(async () => {
       <div v-else class="schedule-list">
         <div v-for="(row, i) in scheduleRows" :key="i" class="schedule-item">
           <div class="time-col">
-            <span class="time-text">{{ row.teeTime }}</span>
+            <span class="time-text">{{ row.periodNumber != null ? `${row.periodNumber}부` : '—' }}</span>
           </div>
           <div class="schedule-content">
             <p class="course-name">{{ row.courseName }}</p>
-            <p class="team-name">{{ row.teamName }}</p>
+            <p class="team-name">{{ row.timeRange }}</p>
           </div>
         </div>
       </div>
