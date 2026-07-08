@@ -1,0 +1,53 @@
+/* 매니저/관리자 화면 공통 폴리시 — 전 화면이 공유하는 클래스에 additive 스타일만 부여한다.
+   (scoped 스타일이 나중에 주입되므로, 여기서는 scoped가 정의하지 않는 속성만 추가해 충돌을 피한다) */
+
+/* 카드류 — 은은한 그림자와 hover 리프트 */
+.table-wrap,
+.filter-bar,
+.stat-card,
+.info-card,
+.page-desc {
+  box-shadow: var(--shadow-small);
+}
+
+.stat-card {
+  transition: box-shadow var(--transition-normal), transform var(--transition-normal);
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-medium);
+  transform: translateY(-2px);
+}
+
+/* 테이블 헤더 — 자간으로 정돈된 인상 */
+.table-wrap th {
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+/* 테이블 행 hover 트랜지션 통일 */
+.table-wrap tbody tr {
+  transition: background var(--transition-fast);
+}
+
+/* 페이지 헤더 — 제목 아래 여백 리듬 */
+.page-header {
+  padding-bottom: var(--space-4);
+}
+
+/* 날짜 인풋/셀렉트 hover 피드백 */
+.date-input:hover,
+.filter-bar__select:hover,
+.group-select:hover {
+  border-color: var(--manager-primary);
+}
+
+/* 에러/알림 박스에 좌측 액센트 바 */
+.page-error,
+.feedback-err {
+  border-left: 3px solid var(--color-danger);
+}
+
+.page-notice {
+  border-left: 3px solid var(--color-info);
+}
