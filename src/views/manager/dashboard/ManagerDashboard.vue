@@ -4,9 +4,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOperationStore } from '@/stores/useOperationStore'
+import { getDashboard } from '@/api/operationApi'
 import BaseButton from '@/components/common/BaseButton.vue'
 import BaseLoading from '@/components/common/BaseLoading.vue'
 import StatsCards from '@/components/manager/StatsCards.vue'
+import VueApexCharts from 'vue3-apexcharts'
 
 const router = useRouter()
 const operationStore = useOperationStore()
@@ -18,8 +20,48 @@ function today() {
 const targetDate = ref(today())
 
 async function loadDashboard() {
-  await operationStore.fetchDashboard(targetDate.value)
+  await Promise.all([
+    operationStore.fetchDashboard(targetDate.value),
+    loadWeeklyTrend(),
+  ])
 }
+
+// ─── 주간 추이 차트 — 기준일 포함 최근 7일 대시보드 API를 병렬 조회 ──
+const weeklyLabels   = ref([])
+const weeklySeries   = ref([])
+const weeklyLoading  = ref(false)
+
+async function loadWeeklyTrend() {
+  weeklyLoading.value = true
+  try {
+    const base = new Date(targetDate.value)
+    const dates = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(base)
+      d.setDate(base.getDate() - (6 - i))
+      return d.toISOString().slice(0, 10)
+    })
+    const results = await Promise.all(dates.map(d => getDashboard(d).catch(() => null)))
+    weeklyLabels.value = dates.map(d => d.slice(5).replace('-', '/'))
+    weeklySeries.value = [
+      { name: '예약팀', data: results.map(r => r?.totalTeams ?? 0) },
+      { name: '배정 완료', data: results.map(r => Math.max((r?.totalTeams ?? 0) - (r?.unassignedTeams ?? 0), 0)) },
+    ]
+  } finally {
+    weeklyLoading.value = false
+  }
+}
+
+const chartOptions = computed(() => ({
+  chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit' },
+  colors: ['#B7C9BE', '#2D6A4F'],
+  plotOptions: { bar: { columnWidth: '45%', borderRadius: 4 } },
+  dataLabels: { enabled: false },
+  xaxis: { categories: weeklyLabels.value, labels: { style: { colors: '#718096' } } },
+  yaxis: { labels: { style: { colors: '#718096' } }, forceNiceScale: true, min: 0 },
+  grid: { borderColor: '#E2E8F0' },
+  legend: { position: 'top', horizontalAlign: 'right' },
+  tooltip: { y: { formatter: v => `${v}팀` } },
+}))
 
 // 대시보드 응답 → StatsCards 항목으로 변환
 const stats = computed(() => {
@@ -110,6 +152,19 @@ onMounted(loadDashboard)
           배정하러 가기
         </BaseButton>
       </div>
+
+      <!-- 주간 배정 추이 차트 -->
+      <section class="chart-section">
+        <h2 class="chart-section__title">주간 배정 추이 <span class="chart-section__desc">(기준일 포함 최근 7일)</span></h2>
+        <BaseLoading v-if="weeklyLoading" />
+        <VueApexCharts
+          v-else
+          type="bar"
+          height="260"
+          :options="chartOptions"
+          :series="weeklySeries"
+        />
+      </section>
 
       <!-- 빠른 작업 -->
       <section class="quick-section">
@@ -212,6 +267,28 @@ onMounted(loadDashboard)
   flex: 1;
   font-size: var(--font-size-body-sm);
   color: var(--color-text-primary);
+}
+
+/* ─── 주간 추이 차트 ─── */
+.chart-section {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-12);
+  box-shadow: var(--shadow-small);
+  padding: var(--space-20) var(--space-24);
+}
+
+.chart-section__title {
+  font-size: var(--font-size-body);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-8);
+}
+
+.chart-section__desc {
+  font-size: var(--font-size-detail);
+  font-weight: 400;
+  color: var(--color-text-secondary);
 }
 
 /* ─── 빠른 작업 ─── */
