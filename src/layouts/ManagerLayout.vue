@@ -94,23 +94,25 @@ const menuDefinitions = [
       { label: '대시보드', path: 'dashboard', icon: 'grid' },
     ],
   },
+  // 운영/배정 실행 메뉴는 명세상 MANAGER 전용 (FR-312/401/407/412/501 등) — ADMIN에게 노출하면 403만 뜬다
   {
     label: 'OPERATION',
     items: [
-      { label: '일일 운영 현황', path: 'daily-status',         icon: 'calendar', roles: ['ADMIN', 'MANAGER'] },
-      { label: '대기 순번 관리', path: 'queues',               icon: 'list',     roles: ['ADMIN', 'MANAGER'] },
-      { label: '운영 설정',      path: 'operation/settings',   icon: 'settings', roles: ['ADMIN', 'MANAGER'] },
-      { label: '티타임 관리',    path: 'operation/tee-times',  icon: 'clock',    roles: ['ADMIN', 'MANAGER'] },
-      { label: '예약팀 조회',    path: 'operation/reservation-teams', icon: 'team', roles: ['ADMIN', 'MANAGER'] },
+      { label: '일일 운영 현황', path: 'daily-status',         icon: 'calendar', roles: ['MANAGER'] },
+      { label: '대기 순번 관리', path: 'queues',               icon: 'list',     roles: ['MANAGER'] },
+      { label: '운영 설정',      path: 'operation/settings',   icon: 'settings', roles: ['MANAGER'] },
+      { label: '티타임 관리',    path: 'operation/tee-times',  icon: 'clock',    roles: ['MANAGER'] },
+      { label: '예약팀 조회',    path: 'operation/reservation-teams', icon: 'team', roles: ['MANAGER'] },
     ],
   },
   {
     label: 'ASSIGNMENT',
     items: [
-      { label: '캐디 배정',      path: 'assignment',         icon: 'assign',   roles: ['ADMIN', 'MANAGER'] },
+      { label: '캐디 배정',      path: 'assignment',         icon: 'assign',   roles: ['MANAGER'] },
+      // 배정 이력은 명세상 Admin+Manager (FR-524)
       { label: '배정 이력',      path: 'assignment/history', icon: 'history',  roles: ['ADMIN', 'MANAGER'] },
-      { label: '카트 배정',      path: 'assignment/carts',      icon: 'cart',   roles: ['ADMIN', 'MANAGER'] },
-      { label: '코스별 배정표',  path: 'assignment/by-course',  icon: 'grid',   roles: ['ADMIN', 'MANAGER'] },
+      { label: '카트 배정',      path: 'assignment/carts',      icon: 'cart',   roles: ['MANAGER'] },
+      { label: '코스별 배정표',  path: 'assignment/by-course',  icon: 'grid',   roles: ['MANAGER'] },
     ],
   },
   {
@@ -131,9 +133,10 @@ const menuDefinitions = [
   {
     label: 'SETTLEMENT',
     items: [
-      { label: '캐디피 정책',    path: 'settlement/fee-policy',  icon: 'money',   roles: ['ADMIN', 'MANAGER'] },
+      // 캐디피 정책/엑셀 내보내기는 명세상 MANAGER 전용 (FR-601/611/612). 월별 정산은 Admin이 마감취소(FR-610)를 하므로 공용
+      { label: '캐디피 정책',    path: 'settlement/fee-policy',  icon: 'money',   roles: ['MANAGER'] },
       { label: '월별 정산',      path: 'settlement/monthly',      icon: 'sheet',   roles: ['ADMIN', 'MANAGER'] },
-      { label: '정산 자료 내보내기', path: 'settlement/export',   icon: 'download', roles: ['ADMIN', 'MANAGER'] },
+      { label: '정산 자료 내보내기', path: 'settlement/export',   icon: 'download', roles: ['MANAGER'] },
     ],
   },
   {
@@ -171,9 +174,18 @@ const visibleMenuGroups = computed(() => {
     .filter(group => group.items.length > 0)
 })
 
-// 현재 경로가 메뉴 경로와 일치하거나 하위 경로인지 확인한다
+// 현재 경로와 가장 구체적으로 일치하는 메뉴 하나만 active 처리한다.
+// 단순 startsWith는 /admin/assignment/by-course에서 '캐디 배정'까지 같이 켜지는 문제가 있다.
+const allMenuPaths = computed(() =>
+  visibleMenuGroups.value.flatMap(group => group.items.map(item => item.to))
+)
+
 function isMenuActive(targetPath) {
-  return route.path === targetPath || route.path.startsWith(`${targetPath}/`)
+  const path = route.path
+  const candidates = allMenuPaths.value.filter(p => path === p || path.startsWith(`${p}/`))
+  if (!candidates.length) return false
+  const best = candidates.reduce((a, b) => (b.length > a.length ? b : a))
+  return best === targetPath
 }
 
 // ─── 로그아웃 ──────────────────────────────────────────────────────────────────

@@ -35,6 +35,16 @@
   padding-bottom: var(--space-4);
 }
 
+/* 상단바(topbar)가 route.meta.title로 현재 페이지 제목을 이미 표시하므로
+   본문 안의 중복 제목은 숨긴다. 액션 버튼들은 오른쪽 정렬을 유지한다. */
+.manager-layout__main .page-header__title {
+  display: none;
+}
+
+.manager-layout__main .page-header > :last-child {
+  margin-left: auto;
+}
+
 /* 날짜 인풋/셀렉트 hover 피드백 */
 .date-input:hover,
 .filter-bar__select:hover,
