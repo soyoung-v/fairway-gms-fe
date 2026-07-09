@@ -169,21 +169,9 @@ onMounted(fetchList)
 
 <template>
   <div class="cart-manage-view">
+    <!-- 상태 탭과 등록 버튼을 같은 라인에 배치 (페이지 제목은 상단바가 표시) -->
     <div class="page-header">
-      <h1 class="page-header__title">카트 관리</h1>
-      <BaseButton variant="primary" size="sm" :disabled="!targetGolfCourseId" @click="openCreateModal">
-        + 카트 등록
-      </BaseButton>
-    </div>
-
-    <!-- Admin 골프장 미선택 안내 -->
-    <p v-if="!targetGolfCourseId" class="page-notice">
-      Admin 계정은 상단 드롭다운에서 골프장을 선택해 주세요.
-    </p>
-
-    <template v-else>
-      <!-- 상태 필터 탭 -->
-      <div class="status-tabs" role="tablist">
+      <div v-if="targetGolfCourseId" class="status-tabs" role="tablist">
         <button
           v-for="tab in STATUS_TABS"
           :key="tab.value"
@@ -195,6 +183,17 @@ onMounted(fetchList)
           {{ tab.label }}
         </button>
       </div>
+      <BaseButton variant="primary" size="sm" :disabled="!targetGolfCourseId" @click="openCreateModal">
+        + 카트 등록
+      </BaseButton>
+    </div>
+
+    <!-- Admin 골프장 미선택 안내 -->
+    <p v-if="!targetGolfCourseId" class="page-notice">
+      Admin 계정은 상단 드롭다운에서 골프장을 선택해 주세요.
+    </p>
+
+    <template v-else>
 
       <!-- 로딩 -->
       <BaseLoading v-if="loading" />

@@ -102,8 +102,16 @@ async function handleAdjust() {
 
 <template>
   <div class="monthly-view">
+    <!-- 탭과 우측 컨트롤을 같은 라인에 배치 (페이지 제목은 상단바가 표시) -->
     <div class="page-header">
-      <h1 class="page-header__title">월별 정산</h1>
+      <div class="tabs">
+        <button class="tab" :class="{ 'is-active': activeTab === 'rounds' }" @click="activeTab = 'rounds'">
+          근무 횟수
+        </button>
+        <button class="tab" :class="{ 'is-active': activeTab === 'income' }" @click="activeTab = 'income'">
+          수입 집계
+        </button>
+      </div>
       <div class="header-actions">
         <input type="month" v-model="selectedMonth" class="month-input" @change="store.fetchMonthlySummary(selectedMonth)" />
         <template v-if="monthlyStatus">
@@ -121,16 +129,6 @@ async function handleAdjust() {
     </div>
 
     <p v-if="confirmError" class="page-error">{{ confirmError }}</p>
-
-    <!-- 탭 -->
-    <div class="tabs">
-      <button class="tab" :class="{ 'is-active': activeTab === 'rounds' }" @click="activeTab = 'rounds'">
-        근무 횟수
-      </button>
-      <button class="tab" :class="{ 'is-active': activeTab === 'income' }" @click="activeTab = 'income'">
-        수입 집계
-      </button>
-    </div>
 
     <BaseLoading v-if="loading" />
     <p v-else-if="error" class="page-error">{{ error }}</p>

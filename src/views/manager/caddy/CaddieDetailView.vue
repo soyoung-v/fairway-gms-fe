@@ -278,7 +278,7 @@ onUnmounted(() => { caddyStore.currentCaddie = null })
       <div class="page-header">
         <div class="page-header__left">
           <button class="back-btn" @click="router.back()">← 목록으로</button>
-          <h1 class="page-header__title">
+          <h1 class="page-header__title page-header__title--keep">
             {{ caddie.name }}
             <BaseBadge :type="getBadge(caddie.status).type" class="header-badge">
               {{ getBadge(caddie.status).label }}

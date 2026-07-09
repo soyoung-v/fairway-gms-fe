@@ -138,14 +138,12 @@ onMounted(fetchList)
 
 <template>
   <div class="golf-course-view">
-    <!-- 페이지 헤더 -->
+    <!-- 페이지 제목은 상단바가 표시 — 선택 골프장 안내와 등록 버튼만 한 라인에 -->
     <div class="golf-course-view__header">
-      <div class="golf-course-view__header-left">
-        <h1 class="golf-course-view__title">골프장 관리</h1>
-        <p v-if="golfCourseStore.selectedGolfCourseName" class="golf-course-view__selected">
-          현재 선택: <strong>{{ golfCourseStore.selectedGolfCourseName }}</strong>
-        </p>
-      </div>
+      <p v-if="golfCourseStore.selectedGolfCourseName" class="golf-course-view__selected">
+        현재 선택: <strong>{{ golfCourseStore.selectedGolfCourseName }}</strong>
+      </p>
+      <span v-else />
       <BaseButton variant="primary" size="sm" @click="openRegisterModal">
         + 골프장 등록
       </BaseButton>

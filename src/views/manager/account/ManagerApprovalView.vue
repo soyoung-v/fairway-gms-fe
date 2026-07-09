@@ -113,10 +113,7 @@ onMounted(fetchList)
 
 <template>
   <div class="manager-approval-view">
-    <div class="manager-approval-view__header">
-      <h1 class="manager-approval-view__title">Manager 가입 승인</h1>
-    </div>
-
+    <!-- 페이지 제목은 상단바가 표시 — 상태 탭이 첫 라인 -->
     <!-- 상태 필터 탭 -->
     <div class="status-tabs" role="tablist">
       <button
