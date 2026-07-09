@@ -65,6 +65,16 @@ export function getSettlementHistory({ yearMonth, caddieId, page = 0, size = 20 
   return apiClient.get('/api/settlement/history', { params }).then(res => res.data?.data)
 }
 
+// 정산 자료 엑셀 다운로드 — 캐디별 일수/횟수/캐디피/조정액 (API-611)
+export function downloadSettlementExcel(yearMonth) {
+  return apiClient.get('/api/settlement/excel', { params: { yearMonth }, responseType: 'blob' })
+}
+
+// 과세자료 관리대장 엑셀 다운로드 — 국세청 제출 양식 (API-610)
+export function downloadInsuranceExcel(yearMonth) {
+  return apiClient.get('/api/settlement/insurance/export', { params: { yearMonth }, responseType: 'blob' })
+}
+
 export default {
   getFeePolicy,
   upsertFeePolicy,
@@ -76,4 +86,6 @@ export default {
   confirmMonth,
   cancelConfirmMonth,
   getSettlementHistory,
+  downloadSettlementExcel,
+  downloadInsuranceExcel,
 }

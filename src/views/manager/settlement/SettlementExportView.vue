@@ -48,8 +48,41 @@ function formatDate(str) {
   return str.replace('T', ' ').slice(0, 16)
 }
 
-// 엑셀/보험 내보내기는 백엔드 미구현 상태 안내
-const exportNote = '엑셀 내보내기 기능은 현재 준비 중입니다.'
+// ─── 엑셀 내보내기 (API-611 정산 자료 / API-610 과세자료 관리대장) ──
+const exporting   = ref('')   // 'settlement' | 'insurance' | ''
+const exportError = ref('')
+
+// blob 응답을 브라우저 다운로드로 저장한다
+function saveBlob(response, fallbackName) {
+  const disposition = response.headers?.['content-disposition'] ?? ''
+  const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)/)
+  const filename = match ? decodeURIComponent(match[1]) : fallbackName
+
+  const url = URL.createObjectURL(new Blob([response.data]))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+async function handleExport(type) {
+  exporting.value   = type
+  exportError.value = ''
+  try {
+    if (type === 'settlement') {
+      const res = await settlementApi.downloadSettlementExcel(selectedMonth.value)
+      saveBlob(res, `정산자료_${selectedMonth.value}.xlsx`)
+    } else {
+      const res = await settlementApi.downloadInsuranceExcel(selectedMonth.value)
+      saveBlob(res, `과세자료관리대장_${selectedMonth.value}.xlsx`)
+    }
+  } catch {
+    exportError.value = '엑셀 다운로드에 실패했습니다. 해당 월의 정산 데이터가 있는지 확인해 주세요.'
+  } finally {
+    exporting.value = ''
+  }
+}
 
 onMounted(() => loadHistory())
 </script>
@@ -60,18 +93,27 @@ onMounted(() => loadHistory())
       <h1 class="page-header__title">정산 자료 내보내기</h1>
     </div>
 
-    <!-- 엑셀 내보내기 섹션 (백엔드 stub 안내) -->
+    <!-- 엑셀 내보내기 -->
     <div class="section-card">
       <h2 class="section-title">자료 내보내기</h2>
-      <p class="section-note">{{ exportNote }}</p>
+      <p class="section-note">선택한 월({{ selectedMonth }}) 기준으로 엑셀 파일을 다운로드합니다.</p>
       <div class="export-actions">
-        <BaseButton variant="ghost" size="sm" disabled title="준비 중">
+        <BaseButton
+          variant="primary" size="sm"
+          :loading="exporting === 'settlement'" :disabled="!!exporting"
+          @click="handleExport('settlement')"
+        >
           정산 내역 엑셀 (.xlsx)
         </BaseButton>
-        <BaseButton variant="ghost" size="sm" disabled title="준비 중">
-          보험료 산정 내역 (.xlsx)
+        <BaseButton
+          variant="secondary" size="sm"
+          :loading="exporting === 'insurance'" :disabled="!!exporting"
+          @click="handleExport('insurance')"
+        >
+          과세자료 관리대장 (.xlsx)
         </BaseButton>
       </div>
+      <p v-if="exportError" class="page-error">{{ exportError }}</p>
     </div>
 
     <!-- 정산 변경 이력 -->
