@@ -36,8 +36,9 @@
 }
 
 /* 상단바(topbar)가 route.meta.title로 현재 페이지 제목을 이미 표시하므로
-   본문 안의 중복 제목은 숨긴다. 액션 버튼들은 오른쪽 정렬을 유지한다. */
-.manager-layout__main .page-header__title {
+   본문 안의 중복 제목은 숨긴다. 액션 버튼들은 오른쪽 정렬을 유지한다.
+   단, 상세 화면처럼 제목에 데이터(이름 등)가 들어가는 경우 --keep으로 예외 처리한다. */
+.manager-layout__main .page-header__title:not(.page-header__title--keep) {
   display: none;
 }
 

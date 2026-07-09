@@ -87,6 +87,8 @@ function handleHeaderAction() {
 
 // ─── 사이드바 메뉴 정의 ────────────────────────────────────────────────────────
 // 순서가 사이드바 표시 순서가 된다. item.roles 없으면 모든 역할 허용.
+// 권한 정책(2026-07-10 결정): ADMIN은 선택 골프장 컨텍스트로 전체 메뉴 접근, MANAGER는 ADMIN 카테고리만 제한.
+// 캐디 가입 승인만 MANAGER 전용 유지 — ADMIN은 '계정 관리/Manager 승인'에서 동일 처리 가능.
 const menuDefinitions = [
   {
     label: 'MAIN',
@@ -94,25 +96,12 @@ const menuDefinitions = [
       { label: '대시보드', path: 'dashboard', icon: 'grid' },
     ],
   },
-  // 운영/배정 실행 메뉴는 명세상 MANAGER 전용 (FR-312/401/407/412/501 등) — ADMIN에게 노출하면 403만 뜬다
   {
-    label: 'OPERATION',
+    label: 'ADMIN',
     items: [
-      { label: '일일 운영 현황', path: 'daily-status',         icon: 'calendar', roles: ['MANAGER'] },
-      { label: '대기 순번 관리', path: 'queues',               icon: 'list',     roles: ['MANAGER'] },
-      { label: '운영 설정',      path: 'operation/settings',   icon: 'settings', roles: ['MANAGER'] },
-      { label: '티타임 관리',    path: 'operation/tee-times',  icon: 'clock',    roles: ['MANAGER'] },
-      { label: '예약팀 조회',    path: 'operation/reservation-teams', icon: 'team', roles: ['MANAGER'] },
-    ],
-  },
-  {
-    label: 'ASSIGNMENT',
-    items: [
-      { label: '캐디 배정',      path: 'assignment',         icon: 'assign',   roles: ['MANAGER'] },
-      // 배정 이력은 명세상 Admin+Manager (FR-524)
-      { label: '배정 이력',      path: 'assignment/history', icon: 'history',  roles: ['ADMIN', 'MANAGER'] },
-      { label: '카트 배정',      path: 'assignment/carts',      icon: 'cart',   roles: ['MANAGER'] },
-      { label: '코스별 배정표',  path: 'assignment/by-course',  icon: 'grid',   roles: ['MANAGER'] },
+      { label: '골프장 관리',    path: 'golf-courses',       icon: 'golf',    roles: ['ADMIN'] },
+      { label: '계정 관리',      path: 'accounts',           icon: 'account', roles: ['ADMIN'] },
+      { label: 'Manager 승인',  path: 'manager-approvals',  icon: 'approve', roles: ['ADMIN'] },
     ],
   },
   {
@@ -126,38 +115,42 @@ const menuDefinitions = [
     label: 'CADDY',
     items: [
       { label: '캐디 목록',        path: 'caddies',            icon: 'person' },
-      { label: '캐디 그룹 관리',   path: 'caddie-groups',      icon: 'list',     roles: ['MANAGER'] },
+      { label: '캐디 그룹 관리',   path: 'caddie-groups',      icon: 'list' },
       { label: '캐디 가입 승인',   path: 'caddie-approvals',   icon: 'check',    roles: ['MANAGER'] },
+    ],
+  },
+  {
+    label: 'OPERATION',
+    items: [
+      { label: '일일 운영 현황', path: 'daily-status',         icon: 'calendar' },
+      { label: '대기 순번 관리', path: 'queues',               icon: 'list' },
+      { label: '운영 설정',      path: 'operation/settings',   icon: 'settings' },
+      { label: '티타임 관리',    path: 'operation/tee-times',  icon: 'clock' },
+      { label: '예약팀 조회',    path: 'operation/reservation-teams', icon: 'team' },
+    ],
+  },
+  {
+    label: 'ASSIGNMENT',
+    items: [
+      { label: '캐디 배정',      path: 'assignment',         icon: 'assign' },
+      { label: '배정 이력',      path: 'assignment/history', icon: 'history' },
+      { label: '카트 배정',      path: 'assignment/carts',      icon: 'cart' },
+      { label: '코스별 배정표',  path: 'assignment/by-course',  icon: 'grid' },
     ],
   },
   {
     label: 'SETTLEMENT',
     items: [
-      // 캐디피 정책/엑셀 내보내기는 명세상 MANAGER 전용 (FR-601/611/612). 월별 정산은 Admin이 마감취소(FR-610)를 하므로 공용
-      { label: '캐디피 정책',    path: 'settlement/fee-policy',  icon: 'money',   roles: ['MANAGER'] },
-      { label: '월별 정산',      path: 'settlement/monthly',      icon: 'sheet',   roles: ['ADMIN', 'MANAGER'] },
-      { label: '정산 자료 내보내기', path: 'settlement/export',   icon: 'download', roles: ['MANAGER'] },
+      { label: '캐디피 정책',    path: 'settlement/fee-policy',  icon: 'money' },
+      { label: '월별 정산',      path: 'settlement/monthly',      icon: 'sheet' },
+      { label: '정산 자료 내보내기', path: 'settlement/export',   icon: 'download' },
     ],
   },
   {
     label: 'BOARD',
     items: [
-      { label: '게시판 관리',    path: 'board',              icon: 'board',   roles: ['ADMIN', 'MANAGER'] },
-      { label: '순번교환 관리',  path: 'board/swap-requests', icon: 'swap',   roles: ['ADMIN', 'MANAGER'] },
-    ],
-  },
-  {
-    label: 'ADMIN',
-    items: [
-      { label: '골프장 관리',    path: 'golf-courses',       icon: 'golf',    roles: ['ADMIN'] },
-      { label: '계정 관리',      path: 'accounts',           icon: 'account', roles: ['ADMIN'] },
-      { label: 'Manager 승인',  path: 'manager-approvals',  icon: 'approve', roles: ['ADMIN'] },
-    ],
-  },
-  {
-    label: 'MY',
-    items: [
-      { label: '내 정보',        path: 'my-info',            icon: 'user' },
+      { label: '게시판 관리',    path: 'board',              icon: 'board' },
+      { label: '순번교환 관리',  path: 'board/swap-requests', icon: 'swap' },
     ],
   },
 ]
@@ -290,6 +283,20 @@ const sidebarCollapsed = ref(false)
 
           <!-- 사용자 정보 -->
           <span class="topbar__user">{{ authStore.name }} ({{ authStore.userRole }})</span>
+
+          <!-- 내 정보 (사이드바 MY 그룹 대체) -->
+          <button
+            class="topbar__settings"
+            type="button"
+            title="내 정보"
+            @click="router.push('/admin/my-info')"
+          >
+            <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+              <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h.01a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h.01a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v.01a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"
+                stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
       </header>
 
@@ -542,6 +549,23 @@ const sidebarCollapsed = ref(false)
 .topbar__user {
   font-size: var(--font-size-body-sm);
   color: var(--color-text-secondary);
+}
+
+.topbar__settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-normal);
+}
+
+.topbar__settings:hover {
+  background: var(--manager-primary-light);
+  color: var(--manager-primary);
+  transform: rotate(45deg);
 }
 
 /* ─── 본문 ──────────────────────────────────────── */
