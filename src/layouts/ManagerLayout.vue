@@ -1,6 +1,6 @@
 <script setup>
 // Manager/Admin Web 운영 화면 레이아웃 — 사이드바 + 상단 헤더 구조
-import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useGolfCourseStore } from '@/stores/useGolfCourseStore'
@@ -181,6 +181,31 @@ function isMenuActive(targetPath) {
   return best === targetPath
 }
 
+// ─── 그룹 접기/펼치기 ──────────────────────────────────────────────────────────
+// 라벨 클릭으로 토글. 현재 화면이 속한 그룹은 이동 시 자동으로 펼친다 (스크롤 최소화).
+const openGroups = ref(new Set(['MAIN']))
+
+function toggleGroup(label) {
+  const next = new Set(openGroups.value)
+  next.has(label) ? next.delete(label) : next.add(label)
+  openGroups.value = next
+}
+
+function isGroupOpen(label) {
+  return openGroups.value.has(label)
+}
+
+watch(() => route.path, (path) => {
+  for (const group of visibleMenuGroups.value) {
+    const containsActive = group.items.some(item => path === item.to || path.startsWith(`${item.to}/`))
+    if (containsActive && !openGroups.value.has(group.label)) {
+      const next = new Set(openGroups.value)
+      next.add(group.label)
+      openGroups.value = next
+    }
+  }
+}, { immediate: true })
+
 // ─── 로그아웃 ──────────────────────────────────────────────────────────────────
 // logout()이 로컬 상태를 비우기 전에 role을 저장해 두고, 정리 완료 후 역할별 로그인으로 이동한다
 // (await 없이 이동하면 아직 인증 상태로 판단돼 가드가 대시보드로 되돌려보낸다)
@@ -205,18 +230,27 @@ const sidebarCollapsed = ref(false)
 
       <!-- 메뉴 그룹 -->
       <nav class="sidebar__nav">
-        <template v-for="group in visibleMenuGroups" :key="group.label">
-          <span class="sidebar__group-label">{{ group.label }}</span>
-          <RouterLink
-            v-for="menu in group.items"
-            :key="menu.to"
-            :to="menu.to"
-            class="sidebar__link"
-            :class="{ 'is-active': isMenuActive(menu.to) }"
+        <div v-for="group in visibleMenuGroups" :key="group.label" class="sidebar__group">
+          <button
+            class="sidebar__group-label"
+            type="button"
+            @click="toggleGroup(group.label)"
           >
-            {{ menu.label }}
-          </RouterLink>
-        </template>
+            {{ group.label }}
+            <span class="sidebar__group-arrow" :class="{ 'is-open': isGroupOpen(group.label) }">▾</span>
+          </button>
+          <div v-show="isGroupOpen(group.label)" class="sidebar__group-items">
+            <RouterLink
+              v-for="menu in group.items"
+              :key="menu.to"
+              :to="menu.to"
+              class="sidebar__link"
+              :class="{ 'is-active': isMenuActive(menu.to) }"
+            >
+              {{ menu.label }}
+            </RouterLink>
+          </div>
+        </div>
       </nav>
 
       <!-- 하단 로그아웃 -->
@@ -352,16 +386,47 @@ const sidebarCollapsed = ref(false)
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  /* 그룹 접기로 높이를 줄였고, 넘치는 경우에도 스크롤바는 표시하지 않는다 (스크롤은 동작) */
+  scrollbar-width: none;
+}
+
+.sidebar__nav::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebar__group-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
   padding: var(--space-8) var(--space-16) var(--space-4);
   font-size: var(--font-size-detail);
   font-weight: 700;
   color: rgba(216, 243, 220, 0.45);
   letter-spacing: 0.08em;
   white-space: nowrap;
+  text-align: left;
+  transition: color var(--transition-fast);
+}
+
+.sidebar__group-label:hover {
+  color: rgba(216, 243, 220, 0.8);
+}
+
+.sidebar__group-arrow {
+  font-size: 10px;
+  transition: transform var(--transition-normal);
+  transform: rotate(-90deg);
+}
+
+.sidebar__group-arrow.is-open {
+  transform: rotate(0deg);
+}
+
+.sidebar__group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .sidebar__link {
