@@ -10,7 +10,17 @@ import BaseInput from '@/components/common/BaseInput.vue'
 import BaseBadge from '@/components/common/BaseBadge.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import BaseLoading from '@/components/common/BaseLoading.vue'
-import BaseEmpty from '@/components/common/BaseEmpty.vue'
+import AdminTable from '@/components/manager/AdminTable.vue'
+
+// AdminTable 컬럼 정의 — 그룹/상태는 슬롯으로 커스텀 렌더링
+const TABLE_COLUMNS = [
+  { key: 'caddieNumber', label: '캐디 번호' },
+  { key: 'name',         label: '이름' },
+  { key: 'phone',        label: '연락처' },
+  { key: 'hireDate',     label: '입사일' },
+  { key: 'group',        label: '그룹' },
+  { key: 'status',       label: '상태' },
+]
 
 const router     = useRouter()
 const authStore  = useAuthStore()
@@ -171,53 +181,40 @@ onMounted(() => Promise.all([caddyStore.fetchCaddies(), loadGroups()]))
     <p v-else-if="caddyStore.error" class="page-error">{{ caddyStore.error }}</p>
 
     <!-- 목록 테이블 -->
-    <div v-else-if="caddyStore.caddies.length" class="table-wrap">
-      <table class="caddie-table">
-        <thead>
-          <tr>
-            <th>캐디 번호</th>
-            <th>이름</th>
-            <th>연락처</th>
-            <th>입사일</th>
-            <th>그룹</th>
-            <th>상태</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="caddie in caddyStore.caddies"
-            :key="caddie.id"
-            class="caddie-table__row"
-            @click="goToDetail(caddie)"
+    <AdminTable
+      v-else
+      :columns="TABLE_COLUMNS"
+      :rows="caddyStore.caddies"
+      clickable
+      empty-text="등록된 캐디가 없습니다."
+      @row-click="goToDetail"
+    >
+      <template #cell-caddieNumber="{ value }">
+        <span class="caddie-number">{{ value }}</span>
+      </template>
+      <template #cell-name="{ value }">
+        <span class="caddie-name">{{ value }}</span>
+      </template>
+      <template #cell-group="{ row }">
+        <span @click.stop>
+          <select
+            v-if="isManager"
+            class="group-select"
+            :value="row.caddieGroupId ?? ''"
+            @change="handleGroupChange(row, $event)"
           >
-            <td class="caddie-table__number">{{ caddie.caddieNumber }}</td>
-            <td class="caddie-table__name">{{ caddie.name }}</td>
-            <td>{{ caddie.phone || '—' }}</td>
-            <td>{{ caddie.hireDate || '—' }}</td>
-            <td @click.stop>
-              <select
-                v-if="isManager"
-                class="group-select"
-                :value="caddie.caddieGroupId ?? ''"
-                @change="handleGroupChange(caddie, $event)"
-              >
-                <option value="">하우스 (기본)</option>
-                <option v-for="g in groups" :key="g.groupId" :value="g.groupId">{{ g.name }}</option>
-              </select>
-              <span v-else>{{ caddie.caddieGroupName || '하우스 (기본)' }}</span>
-            </td>
-            <td>
-              <BaseBadge :type="getBadge(caddie.status).type">
-                {{ getBadge(caddie.status).label }}
-              </BaseBadge>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- 빈 상태 -->
-    <BaseEmpty v-else message="등록된 캐디가 없습니다." />
+            <option value="">하우스 (기본)</option>
+            <option v-for="g in groups" :key="g.groupId" :value="g.groupId">{{ g.name }}</option>
+          </select>
+          <span v-else>{{ row.caddieGroupName || '하우스 (기본)' }}</span>
+        </span>
+      </template>
+      <template #cell-status="{ row }">
+        <BaseBadge :type="getBadge(row.status).type">
+          {{ getBadge(row.status).label }}
+        </BaseBadge>
+      </template>
+    </AdminTable>
 
     <!-- 캐디 등록 모달 -->
     <BaseModal :visible="showRegister" title="캐디 등록" hide-footer @close="showRegister = false">
@@ -365,12 +362,12 @@ onMounted(() => Promise.all([caddyStore.fetchCaddies(), loadGroups()]))
 .caddie-table__row:hover { background: var(--manager-primary-light); }
 .caddie-table__row:last-child td { border-bottom: none; }
 
-.caddie-table__number {
+.caddie-number {
   font-weight: 600;
   color: var(--manager-primary);
 }
 
-.caddie-table__name { font-weight: 500; }
+.caddie-name { font-weight: 500; }
 
 .group-select {
   padding: var(--space-4) var(--space-8);
