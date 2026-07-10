@@ -39,8 +39,9 @@ export function withdrawCaddie(caddieId) {
 }
 
 // 가용 캐디 목록 조회 — 배정 가능한 캐디 + 대기순번 포함 (API-317)
+// 백엔드 필수 파라미터명은 date — assignmentDate로 보내면 400이 난다
 export function getAvailableCaddies(assignmentDate) {
-  return apiClient.get('/api/caddie/caddies/available', { params: { assignmentDate } }).then(res => res.data?.data)
+  return apiClient.get('/api/caddie/caddies/available', { params: { date: assignmentDate } }).then(res => res.data?.data)
 }
 
 // 근무 패턴 수정 — 모든 필드 optional, 전달된 필드만 업데이트 (API-310)

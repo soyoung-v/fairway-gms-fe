@@ -27,28 +27,24 @@ async function loadDashboard() {
 }
 
 // ─── 주간 추이 차트 — 기준일 포함 최근 7일 대시보드 API를 병렬 조회 ──
-const weeklyLabels   = ref([])
-const weeklySeries   = ref([])
-const weeklyLoading  = ref(false)
+// v-if/v-else로 로딩↔차트를 전환하면 apex가 마운트 직후 언마운트돼 "Element not found"가 난다.
+// 그래서 로딩 토글 없이 series가 채워졌을 때만 차트를 한 번 렌더한다.
+const weeklyLabels = ref([])
+const weeklySeries = ref([])
 
 async function loadWeeklyTrend() {
-  weeklyLoading.value = true
-  try {
-    const base = new Date(targetDate.value)
-    const dates = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(base)
-      d.setDate(base.getDate() - (6 - i))
-      return d.toISOString().slice(0, 10)
-    })
-    const results = await Promise.all(dates.map(d => getDashboard(d).catch(() => null)))
-    weeklyLabels.value = dates.map(d => d.slice(5).replace('-', '/'))
-    weeklySeries.value = [
-      { name: '예약팀', data: results.map(r => r?.totalTeams ?? 0) },
-      { name: '배정 완료', data: results.map(r => Math.max((r?.totalTeams ?? 0) - (r?.unassignedTeams ?? 0), 0)) },
-    ]
-  } finally {
-    weeklyLoading.value = false
-  }
+  const base = new Date(targetDate.value)
+  const dates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(base)
+    d.setDate(base.getDate() - (6 - i))
+    return d.toISOString().slice(0, 10)
+  })
+  const results = await Promise.all(dates.map(d => getDashboard(d).catch(() => null)))
+  weeklyLabels.value = dates.map(d => d.slice(5).replace('-', '/'))
+  weeklySeries.value = [
+    { name: '예약팀', data: results.map(r => r?.totalTeams ?? 0) },
+    { name: '배정 완료', data: results.map(r => Math.max((r?.totalTeams ?? 0) - (r?.unassignedTeams ?? 0), 0)) },
+  ]
 }
 
 const chartOptions = computed(() => ({
@@ -153,12 +149,10 @@ onMounted(loadDashboard)
         </BaseButton>
       </div>
 
-      <!-- 주간 배정 추이 차트 -->
-      <section class="chart-section">
+      <!-- 주간 배정 추이 차트 — series가 준비된 뒤 한 번만 마운트 (apex 언마운트 경합 방지) -->
+      <section v-if="weeklySeries.length" class="chart-section">
         <h2 class="chart-section__title">주간 배정 추이 <span class="chart-section__desc">(기준일 포함 최근 7일)</span></h2>
-        <BaseLoading v-if="weeklyLoading" />
         <VueApexCharts
-          v-else
           type="bar"
           height="260"
           :options="chartOptions"

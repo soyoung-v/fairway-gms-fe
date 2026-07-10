@@ -18,7 +18,10 @@ export const useSettlementStore = defineStore('settlement', () => {
       feePolicy.value = await settlementApi.getFeePolicy()
     } catch (err) {
       const code = err.response?.data?.error?.code || ''
-      if (code !== 'POLICY_NOT_FOUND') error.value = '캐디피 정책을 불러오지 못했습니다.'
+      // 백엔드 실제 코드는 FEE_POLICY_NOT_FOUND — 정책 미등록은 오류가 아니라 신규 등록 상태
+      if (code !== 'FEE_POLICY_NOT_FOUND' && code !== 'POLICY_NOT_FOUND') {
+        error.value = '캐디피 정책을 불러오지 못했습니다.'
+      }
       feePolicy.value = null
     } finally {
       loading.value = false
