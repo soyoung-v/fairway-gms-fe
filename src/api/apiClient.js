@@ -22,8 +22,15 @@ async function getRouter() {
 
 // 모든 API 요청에 사용하는 공통 Axios 인스턴스
 // 인증은 HttpOnly Cookie로 처리된다 — withCredentials: true 하나로 충분
+//
+// prod에서는 상대경로('')로 호출한다. 프론트(vercel)와 백엔드(duckdns)가 다른 도메인이면
+// 인증 쿠키가 서드파티 쿠키가 되어 시크릿창/사파리에서 차단된다.
+// vercel.json 프록시(/api → 백엔드)로 same-origin 호출하면 쿠키가 1st-party가 되어 어디서든 동작한다.
+// dev(localhost)는 프록시가 없으므로 VITE_API_BASE_URL(=http://localhost:8080)을 그대로 쓴다.
+const API_BASE = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080')
+
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
+  baseURL: API_BASE,
   withCredentials: true,
   timeout: 15000,
 })
@@ -75,7 +82,7 @@ apiClient.interceptors.response.use(
         // rt 쿠키는 withCredentials: true로 자동 전송된다. 요청 바디 불필요.
         // 인터셉터 재진입을 막기 위해 raw axios 인스턴스로 호출한다.
         await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/auth/token/refresh`,
+          `${API_BASE}/api/auth/token/refresh`,
           {},
           { withCredentials: true },
         )

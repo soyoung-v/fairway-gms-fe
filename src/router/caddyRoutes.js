@@ -19,6 +19,12 @@ export default [
         meta: { ...caddyMeta, title: '홈', uiId: 'UI-C002' },
       },
       {
+        // BottomNav '배정' 탭 경로 — 내 배정 목록은 홈 뷰가 담당하므로 재사용한다 (경로 누락 시 404 방지)
+        path: 'assignment',
+        component: () => import('@/views/caddy/CaddyHomeView.vue'),
+        meta: { ...caddyMeta, title: '내 배정', uiId: 'UI-C002' },
+      },
+      {
         path: 'assignment/:assignmentId',
         component: () => import('@/views/caddy/CaddyAssignmentDetailView.vue'),
         meta: { ...caddyMeta, title: '배정 상세', uiId: 'UI-C003' },
