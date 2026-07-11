@@ -12,7 +12,6 @@
 | 구분 | 링크 |
 |---|---|
 | 서비스 | https://fairway-gms-fe.vercel.app |
-| API 서버 (Backend) | https://fairway-gms.duckdns.org |
 | API 문서 (Swagger UI) | https://fairway-gms.duckdns.org/swagger-ui.html |
 
 ## 테스트 계정
